@@ -1006,15 +1006,10 @@ function mediaHref(url){
 const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 function imgTag(url, opts = {}){
-  const { alt = '', lazy = true, eager = false, sizes = '', extra = '', onerror = '', defer = false, widthHint } = opts;
+  const { alt = '', lazy = true, eager = false, sizes = '', extra = '', onerror = '', widthHint } = opts;
   if(!url) return '';
   const err = onerror ? ` onerror="${onerror}"` : '';
   const sz = sizes ? ` sizes="${sizes}"` : '';
-  const origin = ` data-origin="${esc(url)}"`;
-  if(defer && !eager){
-    const wh = widthHint ? ` data-w="${widthHint}"` : '';
-    return `<img loading="lazy" decoding="async" src="${PIXEL}" data-defer="1"${origin}${wh}${sz} alt="${esc(alt)}"${err}${extra ? ' '+extra : ''}>`;
-  }
   const e = mediaManifest[url];
   const src = optUrl(url, widthHint);
   let srcset = '';
@@ -1026,7 +1021,7 @@ function imgTag(url, opts = {}){
     if(parts.length) srcset = ` srcset="${parts.join(', ')}"`;
   }
   const load = eager ? 'loading="eager" fetchpriority="high"' : (lazy ? 'loading="lazy"' : 'loading="eager"');
-  const originAttr = opts.origin ? origin : '';
+  const originAttr = opts.origin ? ` data-origin="${esc(url)}"` : '';
   return `<img ${load} decoding="async" src="${esc(src)}"${srcset}${sz} alt="${esc(alt)}"${err}${extra ? ' '+extra : ''}${originAttr}>`;
 }
 
@@ -1104,40 +1099,10 @@ function releaseImgSlot(){
   pumpImgQueue();
 }
 
-/* Hydrate deferred placeholders only when near the viewport — stagger to avoid decode freezes */
-const pendingHydrate = [];
-let hydrateRAF = 0;
-function pumpHydrate(){
-  if(hydrateRAF) return;
-  hydrateRAF = requestAnimationFrame(()=>{
-    hydrateRAF = 0;
-    const img = pendingHydrate.shift();
-    if(img) hydrateImg(img);
-    if(pendingHydrate.length) pumpHydrate();
-  });
-}
-const deferIO = new IntersectionObserver((entries)=>{
-  for(const ent of entries){
-    if(!ent.isIntersecting) continue;
-    const img = ent.target;
-    deferIO.unobserve(img);
-    if(img.dataset.loaded === '1') continue;
-    pendingHydrate.push(img);
-  }
-  if(pendingHydrate.length) pumpHydrate();
-}, { rootMargin: '80px 40px', threshold: 0.01 });
-
-function hydrateImg(img){
-  if(!img || img.dataset.loaded === '1') return;
-  const url = img.dataset.origin;
-  if(!url) return;
-  img.dataset.loaded = '1';
-  const w = img.dataset.w ? +img.dataset.w : undefined;
-  setImgSrc(img, url, w);
-}
-
-function watchDeferred(root){
-  (root || document).querySelectorAll('img[data-defer="1"]:not([data-loaded])').forEach(img => deferIO.observe(img));
+function nearViewport(el, margin = 100){
+  if(!el || !el.isConnected) return false;
+  const r = el.getBoundingClientRect();
+  return r.bottom >= -margin && r.top <= innerHeight + margin && (r.width > 0 || r.height > 0);
 }
 
 function resumeImg(img){
@@ -1183,11 +1148,10 @@ $('aboutcols').innerHTML = C.about.paragraphs.map(p=>`<p>${esc(p)}</p>`).join(''
 
 const stepsEl = $('steps');
 const nSteps = C.process.steps.length;
-const processSec = document.getElementById('process');
 stepsEl.innerHTML = C.process.steps.map((s,i)=>{
   const img = s.img || (C.work.items[(i*3) % C.work.items.length] || {}).img || '';
   return `<div class="panel${i===0?' active':''}" data-i="${i}">
-    ${img ? imgTag(img, { defer: true, sizes: '(max-width:760px) 100vw, 28vw', widthHint: 480, onerror: 'this.remove()' }) : ''}
+    ${img ? imgTag(img, { sizes: '(max-width:760px) 100vw, 28vw', widthHint: 480, onerror: 'this.style.opacity=0' }) : ''}
     <div class="shade"></div>
     <span class="pnum">${String(i+1).padStart(2,'0')}</span>
     <span class="ptitle-v">${esc(s.title)}</span>
@@ -1200,61 +1164,20 @@ stepsEl.innerHTML = C.process.steps.map((s,i)=>{
   </div>`;
 }).join('');
 let pActive = 0;
-let pTimer = null;
-function whenScrollIdle(fn){
-  const run = ()=>{
-    if(document.body.classList.contains('scrolling')){
-      setTimeout(run, 140);
-      return;
-    }
-    fn();
-  };
-  run();
-}
-function hydratePanel(i){
-  const p = stepsEl.querySelector(`.panel[data-i="${i}"]`);
-  if(!p) return;
-  const img = p.querySelector('img[data-origin]');
-  if(!img || img.dataset.loaded === '1') return;
-  hydrateImg(img);
-}
-function hydrateAllPanelsIdle(){
-  /* active first, then the rest one-per-idle so scroll never fights decode */
-  hydratePanel(pActive);
-  const order = [];
-  for(let i = 1; i < nSteps; i++) order.push((pActive + i) % nSteps);
-  let k = 0;
-  const next = ()=>{
-    if(k >= order.length) return;
-    const idx = order[k++];
-    whenScrollIdle(()=>{
-      hydratePanel(idx);
-      if('requestIdleCallback' in window) requestIdleCallback(next, { timeout: 900 });
-      else setTimeout(next, 180);
-    });
-  };
-  if('requestIdleCallback' in window) requestIdleCallback(next, { timeout: 600 });
-  else setTimeout(next, 200);
-}
 function setPanel(i){
   pActive = i;
   stepsEl.querySelectorAll('.panel').forEach((p,x)=>p.classList.toggle('active', x===i));
-  hydratePanel(i);
 }
-function startProcessTimer(){
-  if(pTimer || reduced) return;
-  pTimer = setInterval(()=>{
-    if(document.body.classList.contains('scrolling')) return;
-    setPanel((pActive+1)%nSteps);
-  }, 5500);
-}
+let pTimer = reduced ? null : setInterval(()=>{
+  if(document.body.classList.contains('scrolling')) return;
+  setPanel((pActive+1)%nSteps);
+}, 5500);
 stepsEl.querySelectorAll('.panel').forEach(p=>{
   const go = ()=>{
     if(+p.dataset.i === pActive) return;
-    clearInterval(pTimer);
-    pTimer = null;
+    if(pTimer) clearInterval(pTimer);
     setPanel(+p.dataset.i);
-    pTimer = setInterval(()=>{
+    if(!reduced) pTimer = setInterval(()=>{
       if(document.body.classList.contains('scrolling')) return;
       setPanel((pActive+1)%nSteps);
     }, 6500);
@@ -1262,21 +1185,6 @@ stepsEl.querySelectorAll('.panel').forEach(p=>{
   p.addEventListener('mouseenter', go);
   p.addEventListener('click', go);
 });
-/* Arm loads when section is near, but wait for scroll idle before decoding */
-if(processSec){
-  const procIO = new IntersectionObserver(entries=>{
-    if(!entries[0].isIntersecting) return;
-    procIO.disconnect();
-    whenScrollIdle(()=>{
-      hydrateAllPanelsIdle();
-      startProcessTimer();
-    });
-  }, { rootMargin: '40px' });
-  procIO.observe(processSec);
-}else{
-  hydrateAllPanelsIdle();
-  startProcessTimer();
-}
 
 /* work - marquee rows */
 $('workhead').textContent = C.work.heading;
@@ -1303,7 +1211,7 @@ function buildMarquee(){
       card.dataset.i = globalIdx;
       card.innerHTML = `
         <div class="mframe">
-          ${imgTag(w.img, { defer: true, alt: w.title, sizes: '(max-width:600px) 44vw, 22vw', widthHint: 480, onerror: "this.closest('.mcard').style.display='none'" })}
+          ${imgTag(w.img, { alt: w.title, sizes: '(max-width:600px) 44vw, 22vw', widthHint: 480, onerror: "this.style.opacity=0" })}
         </div>
         <div class="mcap">${esc(w.title)}</div>`;
       // Only open lightbox on the first copy to avoid double-registrations
@@ -1316,29 +1224,6 @@ function buildMarquee(){
   t1.innerHTML = ''; t2.innerHTML = '';
   makeCards(row1).forEach(c=>t1.appendChild(c));
   makeCards(row2).forEach(c=>t2.appendChild(c));
-  if(marqueeArmed){
-    watchDeferred(t1);
-    watchDeferred(t2);
-  } else {
-    armMarqueeLoads();
-  }
-}
-let marqueeArmed = false;
-function armMarqueeLoads(){
-  const section = $('marqsection');
-  const arm = ()=>{
-    if(marqueeArmed) return;
-    marqueeArmed = true;
-    watchDeferred($('marqtrack1'));
-    watchDeferred($('marqtrack2'));
-  };
-  if(!section){ arm(); return; }
-  const io = new IntersectionObserver(entries=>{
-    if(!entries[0].isIntersecting) return;
-    io.disconnect();
-    arm();
-  }, { rootMargin: '40px' });
-  io.observe(section);
 }
 buildMarquee();
 
@@ -1482,15 +1367,16 @@ if(C.map && C.map.locations && C.map.locations.length){
 
   }
   const craftEl = document.getElementById('craft');
-  const mapIO = new IntersectionObserver(entries=>{
-    if(!entries[0].isIntersecting) return;
-    mapIO.disconnect();
+  let mapArmed = false;
+  window.tryArmMap = function tryArmMap(){
+    if(mapArmed) return;
+    if(craftEl && !nearViewport(craftEl, 200)) return;
+    mapArmed = true;
     const run = ()=>buildMapSvg();
     if('requestIdleCallback' in window) requestIdleCallback(run, {timeout:1400});
     else setTimeout(run, 80);
-  }, { rootMargin: '480px' });
-  if(craftEl) mapIO.observe(craftEl);
-  else buildMapSvg();
+  };
+  if(!craftEl) window.tryArmMap();
 }else{
   document.getElementById('craft').style.display = 'none';
 }
@@ -1536,7 +1422,7 @@ if(C.team && C.team.members && Object.keys(C.team.members).length){
         ${members.map(m=>`
           <div class="member${!m.img ? ' noimg' : ''}">
             <div class="photo">
-              ${imgTag(m.img, { defer: true, alt: m.name, sizes: '132px', widthHint: 264, origin: true, extra: 'class="team-photo"', onerror: 'this.closest(\'.member\').classList.add(\'noimg\')' })}
+              ${imgTag(m.img, { alt: m.name, sizes: '132px', widthHint: 264, origin: true, extra: 'class="team-photo"', onerror: 'this.closest(\'.member\').classList.add(\'noimg\')' })}
               <div class="ph">${esc((m.name||'?').charAt(0))}</div>
             </div>
             <h4 style="font-size:.82rem; margin-top:.6rem; letter-spacing:.05em">${esc(m.name)}</h4>
@@ -1546,7 +1432,6 @@ if(C.team && C.team.members && Object.keys(C.team.members).length){
       </div>
     </div>
   `).join('');
-  watchDeferred($('teamgrid'));
 }else{
   document.getElementById('team').style.display = 'none';
 }
@@ -1631,6 +1516,8 @@ function applyEffects(){
   }
 
   if(!counted && (offsetTop($('craft')) - cur) < innerHeight * .8) runCounters();
+
+  if(typeof window.tryArmMap === 'function') window.tryArmMap();
 }
 
 function tick(){
@@ -1650,6 +1537,7 @@ function tick(){
   if(moved || Math.abs(vel) > 0.15 || revealItems.length) applyEffects();
 
   if(Math.abs(target - cur) < SNAP && Math.abs(vel) < 0.15 && !revealItems.length){
+    applyEffects();
     engineOn = false;
     return;
   }
@@ -1891,10 +1779,9 @@ function cCloseFn(){
   const POS = [[6,16],[22,62],[40,10],[60,68],[76,22],[88,55],[14,78],[52,38]];
   $('clthumbs').innerHTML = POS.map((p,i)=>{
     const w = C.work.items[i % C.work.items.length];
-    const tag = imgTag(w.img, { defer: true, sizes: '120px', widthHint: 480, onerror: 'this.remove()', extra: 'draggable="false"' });
+    const tag = imgTag(w.img, { sizes: '120px', widthHint: 480, onerror: 'this.style.opacity=0', extra: 'draggable="false"' });
     return tag.replace('<img ', `<img style="left:${p[0]}%;top:${p[1]}%;width:${90 + (i*37)%70}px;animation-delay:${(i*.45).toFixed(2)}s;animation-duration:${(6 + (i*13)%40/10).toFixed(1)}s" `);
   }).join('');
-  watchDeferred($('clthumbs'));
 })();
 $('consbtn').addEventListener('click', cOpenFn);
 $('consbtn').addEventListener('keydown', e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); cOpenFn(); } });
@@ -2069,8 +1956,7 @@ document.addEventListener('keydown', e=>{
 /* strip launcher preview thumbs */
 (function(){
   const a = C.work.items[1] || C.work.items[0], b = C.work.items[4] || C.work.items[0];
-  $('clstrip').innerHTML = [a, b].map(w=>imgTag(w.img, { defer: true, sizes: '80vw', widthHint: 960, onerror: 'this.remove()', extra: 'draggable="false"' })).join('');
-  watchDeferred($('clstrip'));
+  $('clstrip').innerHTML = [a, b].map(w=>imgTag(w.img, { sizes: '80vw', widthHint: 960, onerror: 'this.style.opacity=0', extra: 'draggable="false"' })).join('');
 })();
 
 /* ---------- whac-a-billboard game ---------- */
@@ -2480,6 +2366,7 @@ revealSite = ()=>{
   $('loader').classList.add('done');
   document.body.classList.add('ready');
   layout();
+  applyEffects();
   if(vOn) startEngine();
 };
 if(loaderFinished) revealSite();
@@ -2492,7 +2379,10 @@ window.addEventListener('scroll', ()=>{
   onNativeScroll();
   document.body.classList.add('scrolling');
   clearTimeout(scrollIdle);
-  scrollIdle = setTimeout(()=>document.body.classList.remove('scrolling'), 400);
+  scrollIdle = setTimeout(()=>{
+    document.body.classList.remove('scrolling');
+    if(typeof window.tryArmMap === 'function') window.tryArmMap();
+  }, 400);
 }, { passive: true });
 layout();
 if(!vOn){ cur = window.scrollY; applyEffects(); }

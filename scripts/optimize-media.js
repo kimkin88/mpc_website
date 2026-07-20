@@ -197,8 +197,14 @@ function main() {
     const rel = relMedia(file);
 
     try {
-      if (rel.startsWith('/media/Campaigns/') || rel.startsWith('/media/How We Work/')) {
+      if (rel.startsWith('/media/Campaigns/')) {
         const r = optimizeRaster(file, CAMPAIGN_WIDTHS);
+        if (r) manifest[r.key] = r.entry;
+        console.log('✓', rel);
+      } else if (rel.startsWith('/media/How We Work/')) {
+        const r = ext === '.webp'
+          ? optimizeExistingWebp(file, CAMPAIGN_WIDTHS)
+          : optimizeRaster(file, CAMPAIGN_WIDTHS);
         if (r) manifest[r.key] = r.entry;
         console.log('✓', rel);
       } else if (rel.startsWith('/media/Webp/') && ext === '.webp') {
