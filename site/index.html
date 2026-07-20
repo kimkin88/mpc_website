@@ -17,9 +17,9 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Organization","name":"Media Photography Company","url":"https://mediaphotographycompany.com","logo":"/media/Logos/favicon.jpg","sameAs":["https://www.instagram.com/mediaphotographycompany_/","https://twitter.com/info_mpc"]}
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/anton-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>
 /* ============================================================
    TYPE SCALE - fluid, consistent ratio (~1.25 desktop)
@@ -72,6 +72,11 @@ html[data-theme="light"] .hero .label{color:#a8a5a0}
 *{margin:0;padding:0;box-sizing:border-box}
 html.native{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* Skip offscreen layout/paint when using native scroll (incompatible with vscroll transforms) */
+html.native #about,html.native #process,html.native #work,html.native #craft,
+html.native #brands,html.native #team,html.native #quotes,html.native #contact,html.native footer{
+  content-visibility:auto;contain-intrinsic-size:auto 720px
+}
 html{scrollbar-width:thin;scrollbar-color:#2e2e30 #0a0a0a}
 ::-webkit-scrollbar{width:10px}
 ::-webkit-scrollbar-track{background:var(--black)}
@@ -981,11 +986,20 @@ function mediaHref(url){
   return url.split('/').map((part, i) => (i === 0 ? part : encodeURIComponent(part))).join('/');
 }
 
+const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
 function imgTag(url, opts = {}){
-  const { alt = '', lazy = true, eager = false, sizes = '', extra = '', onerror = '' } = opts;
+  const { alt = '', lazy = true, eager = false, sizes = '', extra = '', onerror = '', defer = false, widthHint } = opts;
   if(!url) return '';
+  const err = onerror ? ` onerror="${onerror}"` : '';
+  const sz = sizes ? ` sizes="${sizes}"` : '';
+  const origin = ` data-origin="${esc(url)}"`;
+  if(defer && !eager){
+    const wh = widthHint ? ` data-w="${widthHint}"` : '';
+    return `<img loading="lazy" decoding="async" src="${PIXEL}" data-defer="1"${origin}${wh}${sz} alt="${esc(alt)}"${err}${extra ? ' '+extra : ''}>`;
+  }
   const e = mediaManifest[url];
-  const src = optUrl(url);
+  const src = optUrl(url, widthHint);
   let srcset = '';
   if(e && e.webp){
     const parts = Object.entries(e.webp)
@@ -995,10 +1009,8 @@ function imgTag(url, opts = {}){
     if(parts.length) srcset = ` srcset="${parts.join(', ')}"`;
   }
   const load = eager ? 'loading="eager" fetchpriority="high"' : (lazy ? 'loading="lazy"' : 'loading="eager"');
-  const sz = sizes ? ` sizes="${sizes}"` : '';
-  const err = onerror ? ` onerror="${onerror}"` : '';
-  const origin = opts.origin ? ` data-origin="${esc(url)}"` : '';
-  return `<img ${load} decoding="async" src="${esc(src)}"${srcset}${sz} alt="${esc(alt)}"${err}${extra ? ' '+extra : ''}${origin}>`;
+  const originAttr = opts.origin ? origin : '';
+  return `<img ${load} decoding="async" src="${esc(src)}"${srcset}${sz} alt="${esc(alt)}"${err}${extra ? ' '+extra : ''}${originAttr}>`;
 }
 
 function setImgSrc(img, url, w){
@@ -1035,7 +1047,7 @@ function applyImgSrc(img, url, w){
       .sort((a,b)=>+a[0]-+b[0]);
     if(parts.length){
       img.srcset = parts.map(([ww, p]) => `${mediaHref(p)} ${ww}w`).join(', ');
-      img.sizes = img.sizes || '100vw';
+      if(!img.getAttribute('sizes')) img.sizes = '100vw';
       img.src = chosen;
       img.dataset.origin = url;
       if(img.complete) done();
@@ -1048,8 +1060,14 @@ function applyImgSrc(img, url, w){
   if(img.complete) done();
 }
 
-/* Cap concurrent Wasabi image loads so the page stays responsive */
-const IMG_MAX_INFLIGHT = 4;
+/* Cap concurrent Wasabi image loads — adaptive to device / connection */
+function imgConcurrency(){
+  const c = navigator.connection;
+  if(c && (c.saveData || /2g/.test(c.effectiveType || ''))) return 1;
+  if(isTouch || innerWidth <= 760) return 2;
+  return 3;
+}
+let IMG_MAX_INFLIGHT = imgConcurrency();
 let imgInflight = 0;
 const imgQueue = [];
 function queueImgLoad(fn){
@@ -1069,7 +1087,29 @@ function releaseImgSlot(){
   pumpImgQueue();
 }
 
-const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+/* Hydrate deferred placeholders only when near the viewport */
+const deferIO = new IntersectionObserver((entries)=>{
+  for(const ent of entries){
+    if(!ent.isIntersecting) continue;
+    const img = ent.target;
+    deferIO.unobserve(img);
+    hydrateImg(img);
+  }
+}, { rootMargin: '320px 80px', threshold: 0.01 });
+
+function hydrateImg(img){
+  if(!img || img.dataset.loaded === '1') return;
+  const url = img.dataset.origin;
+  if(!url) return;
+  img.dataset.loaded = '1';
+  const w = img.dataset.w ? +img.dataset.w : undefined;
+  setImgSrc(img, url, w);
+}
+
+function watchDeferred(root){
+  (root || document).querySelectorAll('img[data-defer="1"]:not([data-loaded])').forEach(img => deferIO.observe(img));
+}
+
 function resumeImg(img){
   if(!img || img.dataset.loaded) return;
   const url = img.dataset.origin;
@@ -1116,7 +1156,7 @@ const nSteps = C.process.steps.length;
 stepsEl.innerHTML = C.process.steps.map((s,i)=>{
   const img = s.img || (C.work.items[(i*3) % C.work.items.length] || {}).img || '';
   return `<div class="panel${i===0?' active':''}" data-i="${i}">
-    ${img ? imgTag(img, { sizes: '(max-width:760px) 100vw, 25vw', onerror: 'this.remove()' }) : ''}
+    ${img ? imgTag(img, { defer: i !== 0, sizes: '(max-width:760px) 100vw, 25vw', onerror: 'this.remove()' }) : ''}
     <div class="shade"></div>
     <span class="pnum">${String(i+1).padStart(2,'0')}</span>
     <span class="ptitle-v">${esc(s.title)}</span>
@@ -1131,7 +1171,13 @@ stepsEl.innerHTML = C.process.steps.map((s,i)=>{
 let pActive = 0;
 function setPanel(i){
   pActive = i;
-  stepsEl.querySelectorAll('.panel').forEach((p,x)=>p.classList.toggle('active', x===i));
+  stepsEl.querySelectorAll('.panel').forEach((p,x)=>{
+    p.classList.toggle('active', x===i);
+    if(x===i){
+      const img = p.querySelector('img[data-defer="1"]:not([data-loaded])');
+      if(img){ deferIO.unobserve(img); hydrateImg(img); }
+    }
+  });
 }
 let pTimer = setInterval(()=>setPanel((pActive+1)%nSteps), 5500);
 stepsEl.querySelectorAll('.panel').forEach(p=>{
@@ -1170,7 +1216,7 @@ function buildMarquee(){
       card.dataset.i = globalIdx;
       card.innerHTML = `
         <div class="mframe">
-          ${imgTag(w.img, { alt: w.title, sizes: '(max-width:600px) 44vw, 22vw', onerror: "this.closest('.mcard').style.display='none'" })}
+          ${imgTag(w.img, { defer: true, alt: w.title, sizes: '(max-width:600px) 44vw, 22vw', widthHint: 960, onerror: "this.closest('.mcard').style.display='none'" })}
         </div>
         <div class="mcap">${esc(w.title)}</div>`;
       // Only open lightbox on the first copy to avoid double-registrations
@@ -1183,8 +1229,11 @@ function buildMarquee(){
   t1.innerHTML = ''; t2.innerHTML = '';
   makeCards(row1).forEach(c=>t1.appendChild(c));
   makeCards(row2).forEach(c=>t2.appendChild(c));
+  watchDeferred(t1);
+  watchDeferred(t2);
 }
 buildMarquee();
+watchDeferred(stepsEl);
 
 // Trigger animation when section scrolls into view
 (function(){
@@ -1258,67 +1307,83 @@ if(C.map && C.map.locations && C.map.locations.length){
     }
     return inside;
   }
-  const COLS = 144, ROWS = 72, PW = W / COLS, PH = H / ROWS;
-  let dots = '';
-  for(let r = 0; r < ROWS; r++){
-    const lat = 90 - (r + .5) * (180 / ROWS);
-    for(let c = 0; c < COLS; c++){
-      const lon = -180 + (c + .5) * (360 / COLS);
-      for(const poly of POLY){
-        if(inPoly(lon, lat, poly)){
-          dots += `<circle class="land" cx="${((c + .5) * PW).toFixed(1)}" cy="${((r + .5) * PH).toFixed(1)}" r="1.12"/>`;
-          break;
+  let mapBuilt = false;
+  function buildMapSvg(){
+    if(mapBuilt) return;
+    mapBuilt = true;
+      const COLS = 96, ROWS = 48, PW = W / COLS, PH = H / ROWS;
+      let dots = '';
+      for(let r = 0; r < ROWS; r++){
+        const lat = 90 - (r + .5) * (180 / ROWS);
+        for(let c = 0; c < COLS; c++){
+          const lon = -180 + (c + .5) * (360 / COLS);
+          for(const poly of POLY){
+            if(inPoly(lon, lat, poly)){
+              dots += `<circle class="land" cx="${((c + .5) * PW).toFixed(1)}" cy="${((r + .5) * PH).toFixed(1)}" r="1.45"/>`;
+              break;
+            }
+          }
         }
       }
-    }
+      const P = l => [ (l.lon+180)/360*W, (90-l.lat)/180*H ];
+      const locs = C.map.locations;
+      const pts = locs.map(P);
+      /* no lines - just the cities, flashing on their own rhythms */
+      let pins = '';
+      locs.forEach((l,i)=>{
+        const [x,y] = pts[i];
+        pins += `<g class="pinG" data-i="${i}">`
+             +  `<circle class="loc-halo" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" stroke-width="1" style="animation-delay:${(Math.random()*2.4).toFixed(2)}s"/>`
+             +  `<circle class="loc" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" style="animation-delay:${(Math.random()*2.6).toFixed(2)}s"/>`
+             +  `<title>${esc(l.name)}</title></g>`;
+      });
+      /* viewfinder lock-on rig: crosshairs + bracket + name, driven by transforms */
+      const lock = `<g class="mlock">`
+        + `<line class="ml-h" x1="0" y1="0" x2="${W}" y2="0"/>`
+        + `<line class="ml-v" x1="0" y1="0" x2="0" y2="${H}"/>`
+        + `<rect class="ml-b" x="-7" y="-7" width="14" height="14"/>`
+        + `<text class="ml-t" x="0" y="0"></text></g>`;
+      $('mapwrap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="World map showing MPC locations">${dots}${pins}${lock}</svg>`;
+      /* click a city (pill or pin) → camera locks on to it */
+      const mwrap = $('mapwrap');
+      let mSel = -1;
+      function mapLocate(i){
+        if(i === mSel) return mapClear();
+        mSel = i;
+        const [x,y] = pts[i];
+        mwrap.classList.add('locked');
+        mwrap.querySelectorAll('.pinG').forEach(g=>g.classList.toggle('sel', +g.dataset.i === i));
+        $('maptags').querySelectorAll('span').forEach(s=>s.classList.toggle('on', +s.dataset.i === i));
+        const svg = mwrap.querySelector('svg');
+        svg.querySelector('.ml-h').style.transform = `translateY(${y}px)`;
+        svg.querySelector('.ml-v').style.transform = `translateX(${x}px)`;
+        svg.querySelector('.ml-b').style.transform = `translate(${x}px,${y}px)`;
+        const t = svg.querySelector('.ml-t');
+        const flip = x > W - 110;
+        t.setAttribute('text-anchor', flip ? 'end' : 'start');
+        t.style.transform = `translate(${flip ? x - 13 : x + 13}px,${y - 9}px)`;
+        t.textContent = locs[i].name;
+      }
+      function mapClear(){
+        mSel = -1;
+        mwrap.classList.remove('locked');
+        mwrap.querySelectorAll('.pinG.sel').forEach(g=>g.classList.remove('sel'));
+        $('maptags').querySelectorAll('span.on').forEach(s=>s.classList.remove('on'));
+      }
+      $('maptags').querySelectorAll('span').forEach(s=>s.addEventListener('click', ()=>mapLocate(+s.dataset.i)));
+      mwrap.querySelectorAll('.pinG').forEach(g=>g.addEventListener('click', ()=>mapLocate(+g.dataset.i)));
+
   }
-  const P = l => [ (l.lon+180)/360*W, (90-l.lat)/180*H ];
-  const locs = C.map.locations;
-  const pts = locs.map(P);
-  /* no lines - just the cities, flashing on their own rhythms */
-  let pins = '';
-  locs.forEach((l,i)=>{
-    const [x,y] = pts[i];
-    pins += `<g class="pinG" data-i="${i}">`
-         +  `<circle class="loc-halo" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" stroke-width="1" style="animation-delay:${(Math.random()*2.4).toFixed(2)}s"/>`
-         +  `<circle class="loc" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" style="animation-delay:${(Math.random()*2.6).toFixed(2)}s"/>`
-         +  `<title>${esc(l.name)}</title></g>`;
-  });
-  /* viewfinder lock-on rig: crosshairs + bracket + name, driven by transforms */
-  const lock = `<g class="mlock">`
-    + `<line class="ml-h" x1="0" y1="0" x2="${W}" y2="0"/>`
-    + `<line class="ml-v" x1="0" y1="0" x2="0" y2="${H}"/>`
-    + `<rect class="ml-b" x="-7" y="-7" width="14" height="14"/>`
-    + `<text class="ml-t" x="0" y="0"></text></g>`;
-  $('mapwrap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="World map showing MPC locations">${dots}${pins}${lock}</svg>`;
-  /* click a city (pill or pin) → camera locks on to it */
-  const mwrap = $('mapwrap');
-  let mSel = -1;
-  function mapLocate(i){
-    if(i === mSel) return mapClear();
-    mSel = i;
-    const [x,y] = pts[i];
-    mwrap.classList.add('locked');
-    mwrap.querySelectorAll('.pinG').forEach(g=>g.classList.toggle('sel', +g.dataset.i === i));
-    $('maptags').querySelectorAll('span').forEach(s=>s.classList.toggle('on', +s.dataset.i === i));
-    const svg = mwrap.querySelector('svg');
-    svg.querySelector('.ml-h').style.transform = `translateY(${y}px)`;
-    svg.querySelector('.ml-v').style.transform = `translateX(${x}px)`;
-    svg.querySelector('.ml-b').style.transform = `translate(${x}px,${y}px)`;
-    const t = svg.querySelector('.ml-t');
-    const flip = x > W - 110;
-    t.setAttribute('text-anchor', flip ? 'end' : 'start');
-    t.style.transform = `translate(${flip ? x - 13 : x + 13}px,${y - 9}px)`;
-    t.textContent = locs[i].name;
-  }
-  function mapClear(){
-    mSel = -1;
-    mwrap.classList.remove('locked');
-    mwrap.querySelectorAll('.pinG.sel').forEach(g=>g.classList.remove('sel'));
-    $('maptags').querySelectorAll('span.on').forEach(s=>s.classList.remove('on'));
-  }
-  $('maptags').querySelectorAll('span').forEach(s=>s.addEventListener('click', ()=>mapLocate(+s.dataset.i)));
-  mwrap.querySelectorAll('.pinG').forEach(g=>g.addEventListener('click', ()=>mapLocate(+g.dataset.i)));
+  const craftEl = document.getElementById('craft');
+  const mapIO = new IntersectionObserver(entries=>{
+    if(!entries[0].isIntersecting) return;
+    mapIO.disconnect();
+    const run = ()=>buildMapSvg();
+    if('requestIdleCallback' in window) requestIdleCallback(run, {timeout:1400});
+    else setTimeout(run, 80);
+  }, { rootMargin: '480px' });
+  if(craftEl) mapIO.observe(craftEl);
+  else buildMapSvg();
 }else{
   document.getElementById('craft').style.display = 'none';
 }
@@ -1333,16 +1398,25 @@ const brandRow = arr => {
 };
 $('brandsA').innerHTML = brandRow(C.brands.rowA);
 $('brandsB').innerHTML = brandRow(C.brands.rowB);
-/* sporadic pink pops on brand names */
+/* sporadic pink pops — only while brands section is on screen */
 const brandSpans = [...document.querySelectorAll('.brands .track span:not(.dot)')];
-setInterval(()=>{
+let brandPopTimer = null;
+const brandsSec = document.querySelector('.brands') || $('brandsA')?.closest('section');
+function brandPopTick(){
   for(let k = 0; k < 2; k++){
     const s = brandSpans[Math.floor(Math.random() * brandSpans.length)];
     if(!s || s.classList.contains('pop')) continue;
     s.classList.add('pop');
     setTimeout(()=>s.classList.remove('pop'), 800 + Math.random() * 800);
   }
-}, 300);
+}
+if(brandsSec){
+  new IntersectionObserver(entries=>{
+    const on = entries[0].isIntersecting;
+    if(on && !brandPopTimer) brandPopTimer = setInterval(brandPopTick, 900);
+    else if(!on && brandPopTimer){ clearInterval(brandPopTimer); brandPopTimer = null; }
+  }, { threshold: 0.05 }).observe(brandsSec);
+}
 
 /* team */
 if(C.team && C.team.members && Object.keys(C.team.members).length){
@@ -1355,7 +1429,7 @@ if(C.team && C.team.members && Object.keys(C.team.members).length){
         ${members.map(m=>`
           <div class="member${!m.img ? ' noimg' : ''}">
             <div class="photo">
-              ${imgTag(m.img, { alt: m.name, sizes: '132px', origin: true, extra: 'class="team-photo"', onerror: 'this.closest(\'.member\').classList.add(\'noimg\')' })}
+              ${imgTag(m.img, { defer: true, alt: m.name, sizes: '132px', widthHint: 264, origin: true, extra: 'class="team-photo"', onerror: 'this.closest(\'.member\').classList.add(\'noimg\')' })}
               <div class="ph">${esc((m.name||'?').charAt(0))}</div>
             </div>
             <h4 style="font-size:.82rem; margin-top:.6rem; letter-spacing:.05em">${esc(m.name)}</h4>
@@ -1365,6 +1439,7 @@ if(C.team && C.team.members && Object.keys(C.team.members).length){
       </div>
     </div>
   `).join('');
+  watchDeferred($('teamgrid'));
 }else{
   document.getElementById('team').style.display = 'none';
 }
@@ -1389,9 +1464,11 @@ $('fsocials').innerHTML = C.footer.socials.map(s=>`<a href="${esc(s.url)}" targe
 
 /* ================= engine ================= */
 const app = $('app'), spacer = $('spacer');
-const useV = () => !reduced && !isTouch && innerWidth > 760;
+const lowEnd = !!(navigator.connection && (navigator.connection.saveData || /2g/.test(navigator.connection.effectiveType || '')))
+  || (navigator.deviceMemory != null && navigator.deviceMemory <= 4);
+const useV = () => !reduced && !isTouch && innerWidth > 760 && !lowEnd;
 const LERP = 0.09, SNAP = 0.1;
-let vOn = false, cur = 0, vel = 0, lastTX = null, lastSkew = 0, engineOn = false;
+let vOn = false, cur = 0, vel = 0, lastTX = null, engineOn = false;
 const heroInner = document.querySelector('.hero-inner');
 const progressEl = $('progress');
 let statsOffset = 0, revealItems = [];
@@ -1406,9 +1483,8 @@ function layout(){
     document.documentElement.classList.toggle('native', !vOn);
     if(!vOn){
       cur = window.scrollY;
-      lastTX = null; lastSkew = 0;
+      lastTX = null;
       if(app.style.transform) app.style.transform = '';
-      document.documentElement.style.setProperty('--skew', '0deg');
       stopEngine();
     } else if(document.body.classList.contains('ready')) {
       startEngine();
@@ -1462,12 +1538,6 @@ function tick(){
   if(moved){
     lastTX = ty;
     app.style.transform = `translate3d(0,${ty}px,0)`;
-  }
-
-  const skew = Math.abs(vel) > 0.1 ? Math.max(-3, Math.min(3, vel * 0.012)) : 0;
-  if(Math.round(skew * 20) !== Math.round(lastSkew * 20)){
-    lastSkew = skew;
-    document.documentElement.style.setProperty('--skew', skew + 'deg');
   }
 
   if(moved || Math.abs(vel) > 0.15 || revealItems.length) applyEffects();
@@ -1562,7 +1632,7 @@ function cBuild(){
   if(cTiles.length) return;
   const items = [];
   const work = (C.work.items || []).filter(w => w && w.img);
-  for(let r = 0; r < 3; r++) items.push(...work); /* repeat to fill space */
+  for(let r = 0; r < 2; r++) items.push(...work); /* two layers — enough depth, half the decode cost */
   items.sort(()=>Math.random() - .5);
   items.forEach(w=>{
     const el = document.createElement('div');
@@ -1691,9 +1761,10 @@ function cCloseFn(){
   const POS = [[6,16],[22,62],[40,10],[60,68],[76,22],[88,55],[14,78],[52,38]];
   $('clthumbs').innerHTML = POS.map((p,i)=>{
     const w = C.work.items[i % C.work.items.length];
-    const tag = imgTag(w.img, { sizes: '120px', onerror: 'this.remove()', extra: 'draggable="false"' });
+    const tag = imgTag(w.img, { defer: true, sizes: '120px', widthHint: 480, onerror: 'this.remove()', extra: 'draggable="false"' });
     return tag.replace('<img ', `<img style="left:${p[0]}%;top:${p[1]}%;width:${90 + (i*37)%70}px;animation-delay:${(i*.45).toFixed(2)}s;animation-duration:${(6 + (i*13)%40/10).toFixed(1)}s" `);
   }).join('');
+  watchDeferred($('clthumbs'));
 })();
 $('consbtn').addEventListener('click', cOpenFn);
 $('consbtn').addEventListener('keydown', e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); cOpenFn(); } });
@@ -1731,7 +1802,7 @@ function stBuild(){
   if(stTiles.length) return;
   const items = [];
   const work = (C.work.items || []).filter(w => w && w.img);
-  for(let r = 0; r < 2; r++) items.push(...work);
+  for(let r = 0; r < 1; r++) items.push(...work); /* single lap — tiles recycle via z-wrap */
   items.forEach((w,i)=>{
     const el = document.createElement('div');
     el.className = 'stile';
@@ -1868,7 +1939,8 @@ document.addEventListener('keydown', e=>{
 /* strip launcher preview thumbs */
 (function(){
   const a = C.work.items[1] || C.work.items[0], b = C.work.items[4] || C.work.items[0];
-  $('clstrip').innerHTML = [a, b].map(w=>imgTag(w.img, { sizes: '80vw', onerror: 'this.remove()', extra: 'draggable="false"' })).join('');
+  $('clstrip').innerHTML = [a, b].map(w=>imgTag(w.img, { defer: true, sizes: '80vw', widthHint: 960, onerror: 'this.remove()', extra: 'draggable="false"' })).join('');
+  watchDeferred($('clstrip'));
 })();
 
 /* ---------- whac-a-billboard game ---------- */

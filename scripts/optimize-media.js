@@ -3,7 +3,8 @@
  * Compress images/video and build media/_opt/manifest.json for responsive WebP delivery.
  * Requires: ImageMagick (`magick`), `cwebp`, `gif2webp` (libwebp). Optional: `ffmpeg` for video.
  *
- * Source originals live in media/ (Campaigns, Team GIFs, Logos, etc.).
+ * Source originals live in media/ (Campaigns, Webp portfolio, Team GIFs, Logos, etc.).
+ * Portfolio stills in media/Webp/*.webp get 480/960/1440 variants under media/_opt/Webp/.
  * After first run, use `npm run prune-sources` to drop originals once WebP exists.
  * Re-running without originals will only refresh the video entry.
  *
@@ -138,6 +139,31 @@ function optimizeLogo(src) {
   return optimizeRaster(src, [480, 960], rel);
 }
 
+/** Already-WebP portfolio stills → responsive width variants under media/_opt/ */
+function optimizeExistingWebp(src, widths, manifestKey) {
+  const ext = path.extname(src).toLowerCase();
+  if (ext !== '.webp') return null;
+
+  const rel = relMedia(src);
+  const baseOpt = optPath(rel);
+  ensureDir(path.dirname(baseOpt));
+
+  const full = baseOpt;
+  run(`magick "${src}" -strip -resize ${MAX_WIDTH}x${MAX_WIDTH}\\> -quality ${WEBP_QUALITY} "${full}"`);
+
+  const webp = { full: relMedia(full) };
+  for (const w of widths) {
+    const wp = baseOpt.replace(/\.webp$/i, `-${w}w.webp`);
+    run(`magick "${full}" -resize ${w}x -quality ${WEBP_QUALITY} "${wp}"`);
+    webp[String(w)] = relMedia(wp);
+  }
+
+  return {
+    key: manifestKey || rel,
+    entry: { src: relMedia(full), webp },
+  };
+}
+
 function optimizeVideo() {
   if (!has('ffmpeg')) {
     console.log('\n⚠ ffmpeg not found — skip video re-encode. Install: brew install ffmpeg\n');
@@ -173,6 +199,10 @@ function main() {
     try {
       if (rel.startsWith('/media/Campaigns/') || rel.startsWith('/media/How We Work/')) {
         const r = optimizeRaster(file, CAMPAIGN_WIDTHS);
+        if (r) manifest[r.key] = r.entry;
+        console.log('✓', rel);
+      } else if (rel.startsWith('/media/Webp/') && ext === '.webp') {
+        const r = optimizeExistingWebp(file, CAMPAIGN_WIDTHS);
         if (r) manifest[r.key] = r.entry;
         console.log('✓', rel);
       } else if (rel.startsWith('/media/Team/') && ext === '.gif') {

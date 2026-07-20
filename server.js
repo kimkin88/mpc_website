@@ -599,6 +599,30 @@ async function handleRequest(req, res) {
       return send(res, req, 200, '{"ok":true}');
     }
 
+    // ---------- static fonts (self-hosted, long-cache) ----------
+    if ((req.method === 'GET' || req.method === 'HEAD') && p.startsWith('/fonts/')) {
+      const name = path.basename(p);
+      if (!name || name !== path.normalize(name) || name.includes('..')) {
+        return send(res, req, 404, '{"error":"not found"}');
+      }
+      const file = path.join(ROOT, 'site', 'fonts', name);
+      if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
+        return send(res, req, 404, '{"error":"not found"}');
+      }
+      const ext = path.extname(name).toLowerCase();
+      const mime = ext === '.woff2' ? 'font/woff2'
+        : ext === '.css' ? 'text/css; charset=utf-8'
+        : 'application/octet-stream';
+      const body = fs.readFileSync(file);
+      res.writeHead(200, {
+        'Content-Type': mime,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Content-Length': body.length,
+        'X-Content-Type-Options': 'nosniff',
+      });
+      return res.end(req.method === 'HEAD' ? undefined : body);
+    }
+
     // ---------- static media ----------
     if ((req.method === 'GET' || req.method === 'HEAD') && p.startsWith('/media/')) {
       if (USE_WASABI_MEDIA) {
