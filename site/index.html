@@ -907,9 +907,9 @@ body.scrolling .panel img{transition:none}
   </section>
 
   <section class="contact" id="contact">
-    <div class="sec-head reveal"><span class="idx">08</span><h2 id="contacthead"></h2></div>
-    <a class="big display reveal magnetic" id="contactbig" href=""></a>
-    <div class="contact-grid reveal">
+    <div class="sec-head reveal in"><span class="idx">08</span><h2 id="contacthead"></h2></div>
+    <a class="big display reveal in magnetic" id="contactbig" href=""></a>
+    <div class="contact-grid reveal in">
       <div class="info">
         <span class="label">Studio</span><p id="caddress"></p>
         <span class="label">Hours</span><p id="chours"></p>
@@ -1443,16 +1443,30 @@ $('quotes').innerHTML = C.quotes.items.map((q,i)=>`
 $('qdots').innerHTML = C.quotes.items.map((_,i)=>`<button class="${i===0?'on':''}" aria-label="Quote ${i+1}"></button>`).join('');
 
 /* contact + footer */
-$('contacthead').textContent = C.contact.heading;
-$('contactbig').textContent = C.contact.big;
-$('contactbig').href = 'mailto:'+C.contact.email;
-$('caddress').textContent = C.contact.address;
-$('chours').textContent = C.contact.hours;
-$('cphone').textContent = C.contact.phone; $('cphone').href = 'tel:'+C.contact.phone.replace(/\s/g,'');
-$('cemail').textContent = C.contact.email; $('cemail').href = 'mailto:'+C.contact.email;
-$('fcopy').textContent = C.footer.copyright;
-$('fnote').textContent = C.footer.note;
-$('fsocials').innerHTML = C.footer.socials.map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join('');
+if(C.contact){
+  if($('contacthead')) $('contacthead').textContent = C.contact.heading || 'Get in Touch';
+  if($('contactbig')){
+    $('contactbig').textContent = C.contact.big || "Let's talk";
+    if(C.contact.email) $('contactbig').href = 'mailto:'+C.contact.email;
+  }
+  if($('caddress')) $('caddress').textContent = C.contact.address || '';
+  if($('chours')) $('chours').textContent = C.contact.hours || '';
+  if($('cphone')){
+    $('cphone').textContent = C.contact.phone || '';
+    if(C.contact.phone) $('cphone').href = 'tel:'+C.contact.phone.replace(/\s/g,'');
+  }
+  if($('cemail')){
+    $('cemail').textContent = C.contact.email || '';
+    if(C.contact.email) $('cemail').href = 'mailto:'+C.contact.email;
+  }
+}
+if(C.footer){
+  if($('fcopy')) $('fcopy').textContent = C.footer.copyright || '';
+  if($('fnote')) $('fnote').textContent = C.footer.note || '';
+  if($('fsocials') && Array.isArray(C.footer.socials)){
+    $('fsocials').innerHTML = C.footer.socials.map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join('');
+  }
+}
 
 /* ================= engine ================= */
 const app = $('app'), spacer = $('spacer');
@@ -1486,6 +1500,15 @@ function layout(){
   cachePositions();
 }
 
+function refreshSpacer(){
+  if(!vOn) return;
+  const h = app.scrollHeight;
+  if(Math.abs(parseFloat(spacer.style.height) - h) > 2){
+    spacer.style.height = h + 'px';
+    cachePositions();
+  }
+}
+
 function cachePositions(){
   revealItems = [...document.querySelectorAll('.reveal:not(.in)')].map(el=>({el, top: offsetTop(el)}));
 }
@@ -1497,7 +1520,9 @@ function offsetTop(el){
 }
 
 function applyEffects(){
-  const max = (vOn ? app.scrollHeight : document.documentElement.scrollHeight) - innerHeight;
+  refreshSpacer();
+  const pageH = vOn ? app.scrollHeight : document.documentElement.scrollHeight;
+  const max = pageH - innerHeight;
   progressEl.style.width = (max > 0 ? (cur / max) * 100 : 0) + '%';
 
   if(cur < innerHeight){
@@ -1508,9 +1533,13 @@ function applyEffects(){
     heroInner.style.transform = '';
   }
 
+  const nearEnd = max > 0 && cur > max - innerHeight * 0.35;
   for(let i = revealItems.length - 1; i >= 0; i--){
-    if(revealItems[i].top - cur < innerHeight * .88){
-      revealItems[i].el.classList.add('in');
+    const item = revealItems[i];
+    const byScroll = item.top - cur < innerHeight * .88;
+    const byView = nearViewport(item.el, 80);
+    if(byScroll || byView || nearEnd){
+      item.el.classList.add('in');
       revealItems.splice(i, 1);
     }
   }
@@ -2368,6 +2397,10 @@ revealSite = ()=>{
   layout();
   applyEffects();
   if(vOn) startEngine();
+  /* team/arcade images can grow the page — keep spacer in sync so contact stays reachable */
+  setTimeout(layout, 400);
+  setTimeout(layout, 1200);
+  window.addEventListener('load', layout, { once: true });
 };
 if(loaderFinished) revealSite();
 
