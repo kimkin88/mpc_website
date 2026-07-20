@@ -1,0 +1,16 @@
+{
+  "name": "mpc-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MPC — Media Photography Company site with admin panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "optimize-media": "node scripts/optimize-media.js",
+    "prune-sources": "node scripts/remove-converted-sources.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MPC Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--black:#0a0a0a;--panel:#141415;--paper:#f2efe9;--muted:#b8b5ae;--grey:#8b8b88;--line:rgba(242,239,233,.14);--accent:#ff3355;--red:#ff8a5a}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--black);color:var(--paper);font-family:'Inter',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased}
+h1,h2,.display{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.02em}
+a{color:inherit}
+.wrap{max-width:880px;margin:0 auto;padding:2.5rem 1.5rem 6rem}
+header.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:3rem;gap:1rem;flex-wrap:wrap}
+header.bar h1{font-size:1.8rem}h1 span{color:var(--accent)}
+header.bar .links{display:flex;gap:1rem;align-items:center}
+header.bar a{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--grey);text-decoration:none;border:1px solid var(--line);padding:.55rem 1rem;border-radius:99px;transition:.3s}
+header.bar a:hover{color:var(--paper);border-color:var(--paper)}
+fieldset{border:1px solid var(--line);padding:1.6rem;margin-bottom:1.8rem;border-radius:4px}
+legend{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1rem;letter-spacing:.05em;padding:0 .7rem;color:var(--accent)}
+label{display:block;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--grey);margin:1.1rem 0 .35rem}
+input,textarea,select{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--paper);font-family:'Inter',sans-serif;font-weight:300;font-size:.9rem;padding:.7rem .85rem;border-radius:3px;outline:none;transition:border-color .25s;resize:vertical}
+input:focus,textarea:focus{border-color:var(--accent)}
+.hint{font-size:.72rem;color:var(--grey);margin-top:.3rem;line-height:1.5}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.row3{display:grid;grid-template-columns:2fr 1fr 2fr;gap:1rem}
+@media(max-width:640px){.row,.row3{grid-template-columns:1fr}}
+.item{border:1px solid var(--line);border-radius:4px;padding:1rem 1.1rem;margin-bottom:.9rem;background:rgba(255,255,255,.015)}
+.item .head{display:flex;justify-content:space-between;align-items:center;gap:.8rem}
+.item .head .t{font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .ctrl{display:flex;gap:.4rem;flex-shrink:0}
+.item .ctrl button{background:none;border:1px solid var(--line);color:var(--grey);width:30px;height:30px;border-radius:4px;cursor:pointer;font-size:.8rem;transition:.25s}
+.item .ctrl button:hover{color:var(--paper);border-color:var(--paper)}
+.item .ctrl button.del:hover{color:var(--red);border-color:var(--red)}
+.cats{display:flex;gap:1.4rem;margin-top:.5rem}
+.cats label{display:flex;align-items:center;gap:.45rem;margin:0;cursor:pointer;font-size:.7rem}
+.cats input{width:auto;accent-color:var(--accent)}
+button.add{background:none;border:1px dashed var(--line);color:var(--grey);width:100%;padding:.8rem;border-radius:4px;cursor:pointer;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;transition:.25s;font-family:'Inter',sans-serif}
+button.add:hover{color:var(--accent);border-color:var(--accent)}
+.savebar{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;z-index:50}
+.savebar .msg{font-size:.78rem;color:var(--grey)}
+.savebar .msg.ok{color:var(--accent)}.savebar .msg.err{color:var(--red)}
+.savebar button{background:var(--accent);color:var(--black);border:none;font-family:'Anton',sans-serif;text-transform:uppercase;font-size:.95rem;letter-spacing:.06em;padding:.85rem 2.4rem;cursor:pointer;border-radius:3px;transition:.25s}
+.savebar button:hover{background:var(--paper)}
+.savebar button:disabled{opacity:.5;cursor:wait}
+/* login */
+#login{position:fixed;inset:0;background:var(--black);display:flex;align-items:center;justify-content:center;z-index:100}
+#login .box{width:min(380px,90vw)}
+#login h1{font-size:2.4rem;margin-bottom:1.6rem}
+#login .err{color:var(--red);font-size:.78rem;margin-top:.7rem;min-height:1em}
+#login button{margin-top:1rem;width:100%;background:var(--accent);color:var(--black);border:none;font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1rem;padding:.9rem;cursor:pointer;border-radius:3px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="box" id="loginform">
+    <h1>MPC<span style="color:var(--accent)">.</span> Admin</h1>
+    <label>Admin password</label>
+    <input type="password" id="pw" autocomplete="current-password" autofocus>
+    <div class="err" id="loginerr"></div>
+    <button type="submit">Enter</button>
+  </form>
+</div>
+
+<div class="wrap hidden" id="panel">
+  <header class="bar">
+    <h1>Site content<span>.</span></h1>
+    <div class="links">
+      <a href="/" target="_blank">View site ↗</a>
+      <a href="#" id="logout">Log out</a>
+    </div>
+  </header>
+
+  <fieldset><legend>Hero</legend>
+    <label>Headline lines (one per line, 3 recommended)</label>
+    <textarea id="f-hero-lines" rows="3"></textarea>
+    <label>Intro paragraph</label>
+    <textarea id="f-hero-intro" rows="3"></textarea>
+    <div class="row">
+      <div><label>Tagline</label><input id="f-hero-tagline"></div>
+      <div><label>Accent colour</label><input id="f-accent" type="color"></div>
+    </div>
+    <label>Background video URL</label><input id="f-hero-video">
+    <label>Poster image URL (shown before video loads)</label><input id="f-hero-poster">
+    <label>Ticker words (comma-separated)</label><input id="f-marquee">
+  </fieldset>
+
+  <fieldset><legend>About</legend>
+    <div class="row">
+      <div><label>Section heading</label><input id="f-about-heading"></div>
+    </div>
+    <label>Big statement — wrap the highlighted phrase in **double asterisks**</label>
+    <textarea id="f-about-statement" rows="3"></textarea>
+    <label>Paragraphs (one per line)</label>
+    <textarea id="f-about-paras" rows="6"></textarea>
+  </fieldset>
+
+  <fieldset><legend>Process</legend>
+    <label>Section heading</label><input id="f-proc-heading">
+    <div id="steps-list"></div>
+    <button class="add" id="add-step">+ Add step</button>
+  </fieldset>
+
+  <fieldset><legend>Portfolio</legend>
+    <label>Section heading</label><input id="f-work-heading">
+    <div class="hint" style="margin-bottom:1rem">Items appear left-to-right in the horizontal gallery. Use ↑ ↓ to reorder.</div>
+    <div id="work-list"></div>
+    <button class="add" id="add-work">+ Add project</button>
+  </fieldset>
+
+  <fieldset><legend>Global reach map</legend>
+    <div class="row">
+      <div><label>Section heading</label><input id="f-map-heading"></div>
+      <div><label>Kicker</label><input id="f-map-kicker"></div>
+    </div>
+    <label>Text</label><textarea id="f-map-text" rows="3"></textarea>
+    <div class="hint" style="margin-bottom:1rem">Locations are automatically linked into a connected global network. Lat/lon in decimal degrees (south and west are negative).</div>
+    <div id="map-list"></div>
+    <button class="add" id="add-location">+ Add location</button>
+  </fieldset>
+
+  <fieldset><legend>Featured case</legend>
+    <div class="row">
+      <div><label>Kicker</label><input id="f-case-kicker"></div>
+      <div><label>Image URL</label><input id="f-case-img"></div>
+    </div>
+    <label>Heading (line breaks kept)</label><textarea id="f-case-heading" rows="2"></textarea>
+    <label>Text</label><textarea id="f-case-text" rows="3"></textarea>
+  </fieldset>
+
+  <fieldset><legend>Stats</legend><div id="stats-list"></div><button class="add" id="add-stat">+ Add stat</button></fieldset>
+
+  <fieldset><legend>Brands</legend>
+    <label>Section heading</label><input id="f-brands-heading">
+    <label>Row one (comma-separated)</label><textarea id="f-brands-a" rows="2"></textarea>
+    <label>Row two (comma-separated)</label><textarea id="f-brands-b" rows="2"></textarea>
+  </fieldset>
+
+  <fieldset><legend>Testimonials</legend>
+    <label>Section heading</label><input id="f-quotes-heading">
+    <div id="quotes-list"></div>
+    <button class="add" id="add-quote">+ Add testimonial</button>
+  </fieldset>
+
+  <fieldset><legend>Team</legend>
+    <label>Section heading</label><input id="f-team-heading">
+    <label>Intro text</label><textarea id="f-team-intro" rows="2"></textarea>
+    <div id="team-list"></div>
+    <button class="add" id="add-dept">+ Add department</button>
+  </fieldset>
+
+  <fieldset><legend>Contact & footer</legend>
+    <div class="row">
+      <div><label>Section heading</label><input id="f-contact-heading"></div>
+      <div><label>Big display text</label><input id="f-contact-big"></div>
+    </div>
+    <div class="row">
+      <div><label>Email</label><input id="f-contact-email"></div>
+      <div><label>Phone</label><input id="f-contact-phone"></div>
+    </div>
+    <label>Address (line breaks kept)</label><textarea id="f-contact-address" rows="2"></textarea>
+    <div class="row">
+      <div><label>Hours</label><input id="f-contact-hours"></div>
+      <div><label>Copyright line</label><input id="f-footer-copy"></div>
+    </div>
+    <label>Footer note</label><input id="f-footer-note">
+    <div id="socials-list"></div>
+    <button class="add" id="add-social">+ Add social link</button>
+  </fieldset>
+</div>
+
+<div class="savebar hidden" id="savebar">
+  <span class="msg" id="savemsg">Unsaved changes are kept in this page until you press Save.</span>
+  <button id="save">Save & publish</button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let C = null;
+let KEY = sessionStorage.getItem('mpckey') || '';
+
+/* ---------- auth ---------- */
+const NO_SERVER = 'Can’t reach the server. The admin panel only works when the site is running through it — open a terminal in the mpc-site folder, run "node server.js", then go to http://localhost:3000/admin (don’t open this file directly).';
+async function verify(k){
+  const r = await fetch('/api/verify', { headers: { 'x-admin-key': k } });
+  return r.ok;
+}
+async function boot(){
+  if(location.protocol === 'file:'){
+    $('login').classList.remove('hidden');
+    $('loginerr').textContent = NO_SERVER;
+    return;
+  }
+  try{ if(KEY && await verify(KEY)) return enter(); }catch(e){}
+  $('login').classList.remove('hidden');
+}
+$('loginform').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const k = $('pw').value;
+  try{
+    if(await verify(k)){ KEY = k; sessionStorage.setItem('mpckey', k); enter(); }
+    else $('loginerr').textContent = 'Wrong password.';
+  }catch(err){
+    $('loginerr').textContent = NO_SERVER;
+  }
+});
+$('logout').addEventListener('click', e=>{ e.preventDefault(); sessionStorage.removeItem('mpckey'); location.reload(); });
+
+async function enter(){
+  $('login').classList.add('hidden');
+  C = await (await fetch('/api/content')).json();
+  if(!C.team) C.team = { heading: 'The Team', intro: '', members: {} };
+  C.team.members = normalizeTeamMembers(C.team.members);
+  if(!C.map) C.map = { heading: 'Global Reach', kicker: 'Where we work', text: '', locations: [{name:'HQ — United Kingdom',lat:51.5,lon:-0.12}] };
+  if(!C.case){
+    if(C._case_backup){
+      const { _note, ...restored } = C._case_backup;
+      C.case = restored;
+      delete C._case_backup;
+    }else{
+      C.case = { kicker: '', heading: '', text: '', img: '' };
+    }
+  }
+  fill();
+  $('panel').classList.remove('hidden');
+  $('savebar').classList.remove('hidden');
+}
+
+/* ---------- fill form from content ---------- */
+function fill(){
+  $('f-hero-lines').value = C.hero.lines.join('\n');
+  $('f-hero-intro').value = C.hero.intro;
+  $('f-hero-tagline').value = C.hero.tagline;
+  $('f-accent').value = C.meta.accent || '#ff3355';
+  $('f-hero-video').value = C.hero.videoUrl;
+  $('f-hero-poster').value = C.hero.posterUrl;
+  $('f-marquee').value = C.marquee.join(', ');
+  $('f-about-heading').value = C.about.heading;
+  $('f-about-statement').value = C.about.statement;
+  $('f-about-paras').value = C.about.paragraphs.join('\n');
+  $('f-proc-heading').value = C.process.heading;
+  $('f-work-heading').value = C.work.heading;
+  $('f-map-heading').value = C.map.heading;
+  $('f-map-kicker').value = C.map.kicker;
+  $('f-map-text').value = C.map.text;
+  $('f-case-kicker').value = C.case.kicker;
+  $('f-case-img').value = C.case.img;
+  $('f-case-heading').value = C.case.heading;
+  $('f-case-text').value = C.case.text;
+  $('f-brands-heading').value = C.brands.heading;
+  $('f-brands-a').value = C.brands.rowA.join(', ');
+  $('f-brands-b').value = C.brands.rowB.join(', ');
+  $('f-quotes-heading').value = C.quotes.heading;
+  $('f-team-heading').value = C.team.heading;
+  $('f-team-intro').value = C.team.intro;
+  $('f-contact-heading').value = C.contact.heading;
+  $('f-contact-big').value = C.contact.big;
+  $('f-contact-email').value = C.contact.email;
+  $('f-contact-phone').value = C.contact.phone;
+  $('f-contact-address').value = C.contact.address;
+  $('f-contact-hours').value = C.contact.hours;
+  $('f-footer-copy').value = C.footer.copyright;
+  $('f-footer-note').value = C.footer.note;
+  renderSteps(); renderWork(); renderStats(); renderQuotes(); renderTeam(); renderSocials(); renderMap();
+}
+function renderMap(){
+  const el = $('map-list');
+  el.innerHTML = C.map.locations.map((l,i)=>`
+    <div class="item">
+      <div class="head"><span class="t">${i===0?'HQ — ':''}${escA(l.name || 'Location '+(i+1))}</span>${listCtrl(C.map.locations,i)}</div>
+      <div class="row3">
+        <div><label>Name</label><input data-k="name" value="${escA(l.name)}"></div>
+        <div><label>Latitude</label><input data-k="lat" type="number" step="0.1" value="${escA(l.lat)}"></div>
+        <div><label>Longitude</label><input data-k="lon" type="number" step="0.1" value="${escA(l.lon)}"></div>
+      </div>
+    </div>`).join('');
+  bindCtrl(el, C.map.locations, renderMap);
+  bindFields(el, C.map.locations);
+}
+
+/* ---------- list editors ---------- */
+function listCtrl(arr, i, rerender){
+  return `<div class="ctrl">
+    <button type="button" data-a="up" ${i===0?'disabled':''}>↑</button>
+    <button type="button" data-a="dn" ${i===arr.length-1?'disabled':''}>↓</button>
+    <button type="button" class="del" data-a="del">✕</button>
+  </div>`;
+}
+function bindCtrl(container, arr, rerender){
+  container.querySelectorAll('.item').forEach((item, i)=>{
+    item.querySelectorAll('.ctrl button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const a = b.dataset.a;
+        if(a === 'del') arr.splice(i, 1);
+        if(a === 'up'){ [arr[i-1], arr[i]] = [arr[i], arr[i-1]]; }
+        if(a === 'dn'){ [arr[i+1], arr[i]] = [arr[i], arr[i+1]]; }
+        rerender();
+      });
+    });
+  });
+}
+
+function renderSteps(){
+  const el = $('steps-list');
+  el.innerHTML = C.process.steps.map((s,i)=>`
+    <div class="item">
+      <div class="head"><span class="t">Step ${i+1}</span>${listCtrl(C.process.steps,i)}</div>
+      <label>Title</label><input data-k="title" value="${escA(s.title)}">
+      <label>Text</label><textarea data-k="text" rows="2">${escT(s.text)}</textarea>
+      <label>Background image URL (optional — a portfolio image is used if empty)</label><input data-k="img" value="${escA(s.img || '')}">
+    </div>`).join('');
+  bindCtrl(el, C.process.steps, renderSteps);
+  bindFields(el, C.process.steps);
+}
+function renderWork(){
+  const el = $('work-list');
+  el.innerHTML = C.work.items.map((w,i)=>`
+    <div class="item">
+      <div class="head"><span class="t">${String(i+1).padStart(2,'0')} — ${escA(w.title || 'Untitled')}</span>${listCtrl(C.work.items,i)}</div>
+      <label>Title</label><input data-k="title" value="${escA(w.title)}">
+      <label>Image URL</label><input data-k="img" value="${escA(w.img)}">
+      <div class="cats">
+        <label><input type="checkbox" data-cat="photo" ${w.cats.includes('photo')?'checked':''}> Photography</label>
+        <label><input type="checkbox" data-cat="video" ${w.cats.includes('video')?'checked':''}> Video</label>
+      </div>
+    </div>`).join('');
+  bindCtrl(el, C.work.items, renderWork);
+  bindFields(el, C.work.items);
+  el.querySelectorAll('.item').forEach((item,i)=>{
+    item.querySelectorAll('[data-cat]').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const cats = [...item.querySelectorAll('[data-cat]:checked')].map(x=>x.dataset.cat);
+        C.work.items[i].cats = cats.length ? cats : ['photo'];
+      });
+    });
+  });
+}
+function renderStats(){
+  const el = $('stats-list');
+  el.innerHTML = C.stats.map((s,i)=>`
+    <div class="item">
+      <div class="head"><span class="t">Stat ${i+1}</span>${listCtrl(C.stats,i)}</div>
+      <div class="row3">
+        <div><label>Number</label><input data-k="value" type="number" value="${escA(s.value)}"></div>
+        <div><label>Suffix</label><input data-k="suffix" value="${escA(s.suffix)}"></div>
+        <div><label>Label</label><input data-k="label" value="${escA(s.label)}"></div>
+      </div>
+    </div>`).join('');
+  bindCtrl(el, C.stats, renderStats);
+  bindFields(el, C.stats);
+}
+function renderQuotes(){
+  const el = $('quotes-list');
+  el.innerHTML = C.quotes.items.map((q,i)=>`
+    <div class="item">
+      <div class="head"><span class="t">Quote ${i+1}</span>${listCtrl(C.quotes.items,i)}</div>
+      <label>Quote</label><textarea data-k="text" rows="3">${escT(q.text)}</textarea>
+      <label>Attribution</label><input data-k="cite" value="${escA(q.cite)}">
+    </div>`).join('');
+  bindCtrl(el, C.quotes.items, renderQuotes);
+  bindFields(el, C.quotes.items);
+}
+function normalizeTeamMembers(members){
+  if(Array.isArray(members)) return { Team: members };
+  if(members && typeof members === 'object') return members;
+  return {};
+}
+function teamDeptNames(){ return Object.keys(C.team.members); }
+function renderTeam(){
+  const el = $('team-list');
+  const depts = teamDeptNames();
+  el.innerHTML = depts.map((dept, di)=>{
+    const members = C.team.members[dept] || [];
+    return `
+    <div class="item" data-dept="${escA(dept)}">
+      <div class="head"><span class="t">Department ${di+1}</span>
+        <div class="ctrl">
+          <button type="button" data-dept-a="up" ${di===0?'disabled':''}>↑</button>
+          <button type="button" data-dept-a="dn" ${di===depts.length-1?'disabled':''}>↓</button>
+          <button type="button" class="del" data-dept-a="del">✕</button>
+        </div>
+      </div>
+      <label>Department name</label><input data-dept-name value="${escA(dept)}">
+      ${members.map((m,i)=>`
+        <div class="item" data-member="${i}" style="margin:1rem 0 0;background:rgba(255,255,255,.02)">
+          <div class="head"><span class="t">${escA(m.name || 'Member '+(i+1))} — ${escA(m.role||'')}</span>${listCtrl(members,i)}</div>
+          <div class="row">
+            <div><label>Name</label><input data-k="name" value="${escA(m.name)}"></div>
+            <div><label>Role</label><input data-k="role" value="${escA(m.role)}"></div>
+          </div>
+          <label>Photo / GIF URL</label><input data-k="img" value="${escA(m.img||'')}">
+        </div>`).join('')}
+      <button type="button" class="add" data-add-member style="margin-top:1rem">+ Add member to ${escA(dept)}</button>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll(':scope > .item[data-dept]').forEach((deptEl, di)=>{
+    const oldName = depts[di];
+    const members = C.team.members[oldName];
+
+    deptEl.querySelectorAll('[data-dept-a]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const names = teamDeptNames();
+        const a = b.dataset.deptA;
+        if(a === 'del'){
+          delete C.team.members[oldName];
+          return renderTeam();
+        }
+        if(a === 'up' || a === 'dn'){
+          const j = a === 'up' ? di - 1 : di + 1;
+          if(j < 0 || j >= names.length) return;
+          const ordered = {};
+          const swapped = [...names];
+          [swapped[di], swapped[j]] = [swapped[j], swapped[di]];
+          swapped.forEach(n => { ordered[n] = C.team.members[n]; });
+          C.team.members = ordered;
+          return renderTeam();
+        }
+      });
+    });
+
+    const nameInput = deptEl.querySelector('[data-dept-name]');
+    nameInput.addEventListener('change', ()=>{
+      const next = nameInput.value.trim() || 'Untitled';
+      if(next === oldName) return;
+      if(Object.prototype.hasOwnProperty.call(C.team.members, next)){
+        nameInput.value = oldName;
+        return alert('A department with that name already exists.');
+      }
+      const ordered = {};
+      teamDeptNames().forEach(n=>{
+        ordered[n === oldName ? next : n] = C.team.members[n];
+      });
+      C.team.members = ordered;
+      renderTeam();
+    });
+
+    bindCtrl(deptEl, members, renderTeam);
+    bindFields(deptEl, members);
+
+    const addBtn = deptEl.querySelector('[data-add-member]');
+    if(addBtn) addBtn.addEventListener('click', ()=>{
+      members.push({ name:'', role:'', img:'' });
+      renderTeam();
+    });
+  });
+}
+function renderSocials(){
+  const el = $('socials-list');
+  el.innerHTML = C.footer.socials.map((s,i)=>`
+    <div class="item">
+      <div class="head"><span class="t">Social ${i+1}</span>${listCtrl(C.footer.socials,i)}</div>
+      <div class="row">
+        <div><label>Label</label><input data-k="label" value="${escA(s.label)}"></div>
+        <div><label>URL</label><input data-k="url" value="${escA(s.url)}"></div>
+      </div>
+    </div>`).join('');
+  bindCtrl(el, C.footer.socials, renderSocials);
+  bindFields(el, C.footer.socials);
+}
+function bindFields(container, arr){
+  container.querySelectorAll('.item').forEach((item,i)=>{
+    item.querySelectorAll('[data-k]').forEach(inp=>{
+      inp.addEventListener('input', ()=>{ arr[i][inp.dataset.k] = inp.type === 'number' ? +inp.value : inp.value; });
+    });
+  });
+}
+const escA = s => String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const escT = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+$('add-step').onclick = ()=>{ C.process.steps.push({title:'New step',text:'',img:''}); renderSteps(); };
+$('add-work').onclick = ()=>{ C.work.items.push({title:'New project',cats:['photo'],img:''}); renderWork(); };
+$('add-stat').onclick = ()=>{ C.stats.push({value:0,suffix:'+',label:'New stat'}); renderStats(); };
+$('add-quote').onclick = ()=>{ C.quotes.items.push({text:'',cite:''}); renderQuotes(); };
+$('add-dept').onclick = ()=>{
+  let name = 'New department';
+  let n = 2;
+  while(Object.prototype.hasOwnProperty.call(C.team.members, name)){
+    name = 'New department ' + n++;
+  }
+  C.team.members[name] = [{ name:'', role:'', img:'' }];
+  renderTeam();
+};
+$('add-location').onclick = ()=>{ C.map.locations.push({name:'',lat:0,lon:0}); renderMap(); };
+$('add-social').onclick = ()=>{ C.footer.socials.push({label:'',url:''}); renderSocials(); };
+
+/* ---------- collect scalar fields & save ---------- */
+function collect(){
+  C.hero.lines = $('f-hero-lines').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  C.hero.intro = $('f-hero-intro').value;
+  C.hero.tagline = $('f-hero-tagline').value;
+  C.meta.accent = $('f-accent').value;
+  C.hero.videoUrl = $('f-hero-video').value.trim();
+  C.hero.posterUrl = $('f-hero-poster').value.trim();
+  C.marquee = $('f-marquee').value.split(',').map(s=>s.trim()).filter(Boolean);
+  C.about.heading = $('f-about-heading').value;
+  C.about.statement = $('f-about-statement').value;
+  C.about.paragraphs = $('f-about-paras').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  C.process.heading = $('f-proc-heading').value;
+  C.work.heading = $('f-work-heading').value;
+  C.map.heading = $('f-map-heading').value;
+  C.map.kicker = $('f-map-kicker').value;
+  C.map.text = $('f-map-text').value;
+  C.case.kicker = $('f-case-kicker').value;
+  C.case.img = $('f-case-img').value.trim();
+  C.case.heading = $('f-case-heading').value;
+  C.case.text = $('f-case-text').value;
+  C.brands.heading = $('f-brands-heading').value;
+  C.brands.rowA = $('f-brands-a').value.split(',').map(s=>s.trim()).filter(Boolean);
+  C.brands.rowB = $('f-brands-b').value.split(',').map(s=>s.trim()).filter(Boolean);
+  C.quotes.heading = $('f-quotes-heading').value;
+  C.team.heading = $('f-team-heading').value;
+  C.team.intro = $('f-team-intro').value;
+  C.contact.heading = $('f-contact-heading').value;
+  C.contact.big = $('f-contact-big').value;
+  C.contact.email = $('f-contact-email').value.trim();
+  C.contact.phone = $('f-contact-phone').value.trim();
+  C.contact.address = $('f-contact-address').value;
+  C.contact.hours = $('f-contact-hours').value;
+  C.footer.copyright = $('f-footer-copy').value;
+  C.footer.note = $('f-footer-note').value;
+}
+$('save').addEventListener('click', async ()=>{
+  collect();
+  const btn = $('save'), msg = $('savemsg');
+  btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Saving…';
+  try{
+    const r = await fetch('/api/content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': KEY },
+      body: JSON.stringify(C, null, 2)
+    });
+    if(!r.ok) throw new Error((await r.json()).error || r.status);
+    msg.className = 'msg ok'; msg.textContent = 'Saved ✓ — live site updated in Supabase (previous version backed up).';
+  }catch(e){
+    msg.className = 'msg err'; msg.textContent = 'Save failed: ' + e.message;
+  }
+  btn.disabled = false;
+});
+
+boot();
+</script>
+</body>
+</html>

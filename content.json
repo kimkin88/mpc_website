@@ -1,0 +1,851 @@
+{
+  "meta": {
+    "title": "MPC - Media Photography Company | Campaigns Creatively Captured",
+    "accent": "#ff3355"
+  },
+  "hero": {
+    "lines": [
+      "Campaigns",
+      "Creatively",
+      "Captured"
+    ],
+    "intro": "We photograph Out of Home advertising in the wild - billboards, murals and takeovers - so the world's biggest campaigns are never forgotten.",
+    "tagline": "Worldwide \u00b7 Out of Home \u00b7 Photography & Film",
+    "videoUrl": "/media/_opt/Videos/website_showreel.mp4",
+    "posterUrl": "/media/_opt/Videos/showreel_preview.webp"
+  },
+  "marquee": [
+    "Out of Home",
+    "Photography",
+    "Video",
+    "Retouching",
+    "Special Builds",
+    "Murals"
+  ],
+  "about": {
+    "heading": "Why MPC",
+    "statement": "Expensive campaigns come and go. **Great images of them never do.** We give ultra-premium outdoor media a second life - as photography that stands alone.",
+    "paragraphs": [
+      "Media Photography Company specialises in capturing high-quality images of Out of Home advertising campaigns, across every environment and format - from Piccadilly's screens to painted walls in Shoreditch.",
+      "With clients spending more than ever on creative outdoor marketing, the demand for ultra-premium imagery has never been higher. Our work delights clients, proves the value of their spend, and becomes an invaluable part of internal communications and marketing material.",
+      "We shoot at different times of day, from unexpected angles, folding the movement and energy of the street into every frame - so the result is not just a record, but a graphic, dynamic image in its own right."
+    ]
+  },
+  "process": {
+    "heading": "How We Work",
+    "steps": [
+      {
+        "title": "Planning",
+        "text": "Deep knowledge of the OOH market and how campaigns are delivered puts us in a unique position to plan the perfect capture - sites, sightlines, light and timing.",
+        "img": "/media/How We Work/Planning.jpg"
+      },
+      {
+        "title": "Capturing",
+        "text": "Full location shoots at various times of day, using a variety of angles and composition. We capture the ad in-situ and the impact it has on the world around it.",
+        "img": "/media/How We Work/Capturing.jpg"
+      },
+      {
+        "title": "Retouching",
+        "text": "Our in-house retouchers spend considerable time in post-production, finishing every frame to the highest professional standard.",
+        "img": "/media/How We Work/Retouching.jpg"
+      },
+      {
+        "title": "Delivering",
+        "text": "High-quality, full-resolution stills and film on completion - ready for reviews, decks, socials and the archive.",
+        "img": "/media/How We Work/Delivery.jpg"
+      }
+    ]
+  },
+  "work": {
+    "heading": "Featured Media",
+    "items": [
+      {
+        "title": "10 2",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/10 2.webp"
+      },
+      {
+        "title": "10",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/10.webp"
+      },
+      {
+        "title": "11",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/11.webp"
+      },
+      {
+        "title": "12",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/12.webp"
+      },
+      {
+        "title": "13",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/13.webp"
+      },
+      {
+        "title": "14",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/14.webp"
+      },
+      {
+        "title": "18",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/18.webp"
+      },
+      {
+        "title": "2",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/2.webp"
+      },
+      {
+        "title": "3",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/3.webp"
+      },
+      {
+        "title": "4",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/4.webp"
+      },
+      {
+        "title": "5 2",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/5 2.webp"
+      },
+      {
+        "title": "5",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/5.webp"
+      },
+      {
+        "title": "6 2",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/6 2.webp"
+      },
+      {
+        "title": "6",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/6.webp"
+      },
+      {
+        "title": "7 2",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/7 2.webp"
+      },
+      {
+        "title": "7",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/7.webp"
+      },
+      {
+        "title": "8",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/8.webp"
+      },
+      {
+        "title": "9",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/9.webp"
+      },
+      {
+        "title": "Danone GetPro Apr2025 K59869 13",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/Danone-GetPro_Apr2025_K59869_13.webp"
+      },
+      {
+        "title": "Dell 3DProductLaunch January2026 B GB200163 Tokyo 12",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/Dell_3DProductLaunch_January2026_B_GB200163_Tokyo_12.webp"
+      },
+      {
+        "title": "Etisalat MWCBarcelona B NL200467 Feb2026 Barcelona 01",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/Etisalat_MWCBarcelona_B_NL200467_Feb2026_Barcelona_01.webp"
+      },
+      {
+        "title": "Hoka Berlin Aug2025 01",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/Hoka_Berlin_Aug2025_01.webp"
+      },
+      {
+        "title": "LF GB BRM FF 00167 02 01122025 SB958036 1 a",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/LF-GB-BRM-FF-00167-02_01122025_SB958036_1_a.webp"
+      },
+      {
+        "title": "MPC x Ocean 14",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/MPC x Ocean 14.webp"
+      },
+      {
+        "title": "MPC x Ocean 18",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/MPC x Ocean 18.webp"
+      },
+      {
+        "title": "Nike Peg40 Barcelona 07",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/Nike_Peg40_Barcelona_07.webp"
+      },
+      {
+        "title": "Qualcomm Snapdragon Aug2025 RD2215 07",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/Qualcomm-Snapdragon_Aug2025_RD2215_07.webp"
+      },
+      {
+        "title": "Rolex WoSG Apr2026 K61847 05",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/Rolex-WoSG_Apr2026_K61847_05.webp"
+      },
+      {
+        "title": "SF GB LAM AB 08430 04 03112025 SB976699 1 a",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/SF-GB-LAM-AB-08430-04_03112025_SB976699_1_a.webp"
+      },
+      {
+        "title": "SF GB WLO DB 02013 01 14072025 SB990845 1 b",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/SF-GB-WLO-DB-02013-01_14072025_SB990845_1_b.webp"
+      },
+      {
+        "title": "TommyHilfiger London June2025 18",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/TommyHilfiger_London_June2025_18.webp"
+      },
+      {
+        "title": "UGG AW25 ICONSREIMAGINED Berlin 01",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/UGG-AW25-ICONSREIMAGINED_Berlin_01.webp"
+      },
+      {
+        "title": "UGG AW25 ICONSREIMAGINED London 24",
+        "cats": [
+          "photo"
+        ],
+        "img": "/media/Webp/UGG-AW25-ICONSREIMAGINED_London_24.webp"
+      }
+    ]
+  },
+  "map": {
+    "heading": "Global Reach",
+    "kicker": "Where we work",
+    "text": "We capture campaigns wherever they run - across Europe, the Americas, the Middle East and Asia-Pacific. If your campaign is live, we can be there.",
+    "locations": [
+      {
+        "name": "London",
+        "lat": 51.5,
+        "lon": -0.12
+      },
+      {
+        "name": "Manchester",
+        "lat": 53.5,
+        "lon": -2.2
+      },
+      {
+        "name": "Scotland",
+        "lat": 56.49,
+        "lon": -4.2
+      },
+      {
+        "name": "Cardiff",
+        "lat": 51.48,
+        "lon": -3.18
+      },
+      {
+        "name": "Liverpool",
+        "lat": 53.41,
+        "lon": -2.99
+      },
+      {
+        "name": "Bristol",
+        "lat": 51.45,
+        "lon": -2.59
+      },
+      {
+        "name": "Newcastle",
+        "lat": 54.98,
+        "lon": -1.62
+      },
+      {
+        "name": "Edinburgh",
+        "lat": 55.95,
+        "lon": -3.19
+      },
+      {
+        "name": "Glasgow",
+        "lat": 55.86,
+        "lon": -4.25
+      },
+      {
+        "name": "Dublin",
+        "lat": 53.35,
+        "lon": -6.26
+      },
+      {
+        "name": "Lisbon",
+        "lat": 38.7,
+        "lon": -9.14
+      },
+      {
+        "name": "Madrid",
+        "lat": 40.4,
+        "lon": -3.7
+      },
+      {
+        "name": "Barcelona",
+        "lat": 41.39,
+        "lon": 2.17
+      },
+      {
+        "name": "Paris",
+        "lat": 48.86,
+        "lon": 2.35
+      },
+      {
+        "name": "Brussels",
+        "lat": 50.85,
+        "lon": 4.35
+      },
+      {
+        "name": "Amsterdam",
+        "lat": 52.37,
+        "lon": 4.9
+      },
+      {
+        "name": "Frankfurt",
+        "lat": 50.11,
+        "lon": 8.68
+      },
+      {
+        "name": "Hamburg",
+        "lat": 53.55,
+        "lon": 9.99
+      },
+      {
+        "name": "Berlin",
+        "lat": 52.52,
+        "lon": 13.4
+      },
+      {
+        "name": "Munich",
+        "lat": 48.14,
+        "lon": 11.58
+      },
+      {
+        "name": "Zurich",
+        "lat": 47.37,
+        "lon": 8.54
+      },
+      {
+        "name": "Milan",
+        "lat": 45.46,
+        "lon": 9.19
+      },
+      {
+        "name": "Rome",
+        "lat": 41.9,
+        "lon": 12.5
+      },
+      {
+        "name": "Vienna",
+        "lat": 48.21,
+        "lon": 16.37
+      },
+      {
+        "name": "Prague",
+        "lat": 50.08,
+        "lon": 14.44
+      },
+      {
+        "name": "Budapest",
+        "lat": 47.5,
+        "lon": 19.04
+      },
+      {
+        "name": "Warsaw",
+        "lat": 52.23,
+        "lon": 21.01
+      },
+      {
+        "name": "Copenhagen",
+        "lat": 55.68,
+        "lon": 12.57
+      },
+      {
+        "name": "Oslo",
+        "lat": 59.91,
+        "lon": 10.75
+      },
+      {
+        "name": "Stockholm",
+        "lat": 59.33,
+        "lon": 18.07
+      },
+      {
+        "name": "Helsinki",
+        "lat": 60.17,
+        "lon": 24.94
+      },
+      {
+        "name": "Athens",
+        "lat": 37.98,
+        "lon": 23.73
+      },
+      {
+        "name": "Istanbul",
+        "lat": 41.01,
+        "lon": 28.98
+      },
+      {
+        "name": "Kyiv",
+        "lat": 50.45,
+        "lon": 30.52
+      },
+      {
+        "name": "Moscow",
+        "lat": 55.76,
+        "lon": 37.62
+      },
+      {
+        "name": "Vancouver",
+        "lat": 49.28,
+        "lon": -123.12
+      },
+      {
+        "name": "Seattle",
+        "lat": 47.61,
+        "lon": -122.33
+      },
+      {
+        "name": "San Francisco",
+        "lat": 37.77,
+        "lon": -122.42
+      },
+      {
+        "name": "Los Angeles",
+        "lat": 34.05,
+        "lon": -118.24
+      },
+      {
+        "name": "Denver",
+        "lat": 39.74,
+        "lon": -104.99
+      },
+      {
+        "name": "Chicago",
+        "lat": 41.88,
+        "lon": -87.63
+      },
+      {
+        "name": "Toronto",
+        "lat": 43.65,
+        "lon": -79.38
+      },
+      {
+        "name": "New York",
+        "lat": 40.71,
+        "lon": -74.01
+      },
+      {
+        "name": "Miami",
+        "lat": 25.76,
+        "lon": -80.19
+      },
+      {
+        "name": "Mexico City",
+        "lat": 19.43,
+        "lon": -99.13
+      },
+      {
+        "name": "Guatemala City",
+        "lat": 14.63,
+        "lon": -90.55
+      },
+      {
+        "name": "Bogot\u00e1",
+        "lat": 4.71,
+        "lon": -74.07
+      },
+      {
+        "name": "Lima",
+        "lat": -12.05,
+        "lon": -77.04
+      },
+      {
+        "name": "Rio de Janeiro",
+        "lat": -22.91,
+        "lon": -43.17
+      },
+      {
+        "name": "S\u00e3o Paulo",
+        "lat": -23.55,
+        "lon": -46.63
+      },
+      {
+        "name": "Buenos Aires",
+        "lat": -34.6,
+        "lon": -58.38
+      },
+      {
+        "name": "Casablanca",
+        "lat": 33.57,
+        "lon": -7.59
+      },
+      {
+        "name": "Accra",
+        "lat": 5.6,
+        "lon": -0.19
+      },
+      {
+        "name": "Lagos",
+        "lat": 6.52,
+        "lon": 3.38
+      },
+      {
+        "name": "Nairobi",
+        "lat": -1.29,
+        "lon": 36.82
+      },
+      {
+        "name": "Johannesburg",
+        "lat": -26.2,
+        "lon": 28.05
+      },
+      {
+        "name": "Cape Town",
+        "lat": -33.92,
+        "lon": 18.42
+      },
+      {
+        "name": "Tel Aviv",
+        "lat": 32.08,
+        "lon": 34.78
+      },
+      {
+        "name": "Dubai",
+        "lat": 25.2,
+        "lon": 55.27
+      },
+      {
+        "name": "Mumbai",
+        "lat": 19.08,
+        "lon": 72.88
+      },
+      {
+        "name": "Delhi",
+        "lat": 28.61,
+        "lon": 77.21
+      },
+      {
+        "name": "Bangkok",
+        "lat": 13.76,
+        "lon": 100.5
+      },
+      {
+        "name": "Kuala Lumpur",
+        "lat": 3.14,
+        "lon": 101.69
+      },
+      {
+        "name": "Singapore",
+        "lat": 1.35,
+        "lon": 103.82
+      },
+      {
+        "name": "Jakarta",
+        "lat": -6.21,
+        "lon": 106.85
+      },
+      {
+        "name": "Hong Kong",
+        "lat": 22.32,
+        "lon": 114.17
+      },
+      {
+        "name": "Shanghai",
+        "lat": 31.23,
+        "lon": 121.47
+      },
+      {
+        "name": "Beijing",
+        "lat": 39.9,
+        "lon": 116.4
+      },
+      {
+        "name": "Seoul",
+        "lat": 37.57,
+        "lon": 126.98
+      },
+      {
+        "name": "Tokyo",
+        "lat": 35.68,
+        "lon": 139.69
+      },
+      {
+        "name": "Manila",
+        "lat": 14.6,
+        "lon": 120.98
+      },
+      {
+        "name": "Perth",
+        "lat": -31.95,
+        "lon": 115.86
+      },
+      {
+        "name": "Brisbane",
+        "lat": -27.47,
+        "lon": 153.03
+      },
+      {
+        "name": "Sydney",
+        "lat": -33.87,
+        "lon": 151.21
+      },
+      {
+        "name": "Melbourne",
+        "lat": -37.81,
+        "lon": 144.96
+      }
+    ]
+  },
+  "case": {
+    "kicker": "Featured Case - Nike \u00d7 Berlin Wall",
+    "heading": "Where the ad\nmeets the street",
+    "text": "Thirty years after the Wall fell, Nike painted it. We captured the mural, the city, and the people moving through it - photography and film delivered as one story.",
+    "img": "/media/_opt/Campaigns/Nike Run/MPC x Ocean_11.webp"
+  },
+  "stats": [
+    {
+      "value": 12,
+      "suffix": "K+",
+      "label": "Images delivered"
+    },
+    {
+      "value": 350,
+      "suffix": "+",
+      "label": "Videos created"
+    },
+    {
+      "value": 900,
+      "suffix": "+",
+      "label": "Campaigns captured"
+    }
+  ],
+  "brands": {
+    "heading": "In Good Company",
+    "rowA": [
+      "Nike",
+      "Warner Bros",
+      "Tom Ford",
+      "Rolex",
+      "Google",
+      "BMW",
+      "Netflix",
+      "Est\u00e9e Lauder"
+    ],
+    "rowB": [
+      "Land Rover",
+      "Twitter",
+      "Unilever",
+      "Kate Spade",
+      "Clinique",
+      "Ben & Jerry's",
+      "Coach",
+      "Three",
+      "BP"
+    ]
+  },
+  "quotes": {
+    "heading": "Kind Words",
+    "items": [
+      {
+        "text": "Don't spend all that time and money creating a fantastic outdoor campaign, only for it to be let down by poor photography. These guys capture our campaigns in all their glory.",
+        "cite": "Mark Rose - Client Director, Mindshare (Nike)"
+      },
+      {
+        "text": "They captured the power and impact of our OOH advertising, showcasing how much of an impression the chosen key sites had on the general public.",
+        "cite": "Nick Oram - Brand Manager, Umbro International"
+      },
+      {
+        "text": "Delighted with both the service and quality. I'd recommend them to anyone looking for images that don't just document the event, but stand alone as great imagery.",
+        "cite": "Andrew Brunton - Account Executive OOH, Kinetic"
+      }
+    ]
+  },
+  "team": {
+    "heading": "The Team",
+    "intro": "A carefully selected core team runs every campaign shoot and film from MPC HQ - each person chosen for their individual skills, and for what they bring to the team as a whole.",
+    "members": {
+      "Management & Operations": [
+        {
+          "name": "James",
+          "role": "CEO",
+          "img": "/media/_opt/Team/James.webp"
+        },
+        {
+          "name": "Nathan",
+          "role": "Head of Operations",
+          "img": "/media/_opt/Team/Nathan.webp"
+        },
+        {
+          "name": "Safia",
+          "role": "Account Manager",
+          "img": "/media/_opt/Team/Safia.webp"
+        },
+        {
+          "name": "Scott",
+          "role": "Account Manager",
+          "img": "/media/_opt/Team/Scott.webp"
+        },
+        {
+          "name": "Arta",
+          "role": "Project Manager",
+          "img": "/media/_opt/Team/Arta.webp"
+        },
+        {
+          "name": "Miika",
+          "role": "Project Coordinator",
+          "img": "/media/_opt/Team/Miika.webp"
+        },
+        {
+          "name": "Anthony",
+          "role": "Business Analyst",
+          "img": "/media/_opt/Team/Anthony.webp"
+        },
+        {
+          "name": "Emma",
+          "role": "Finance Specialist",
+          "img": "/media/_opt/Team/Emma.webp"
+        },
+        {
+          "name": "Jahnvi",
+          "role": "Business Coordinator",
+          "img": "/media/Team/Jahnvi.gif"
+        },
+        {
+          "name": "Rusen",
+          "role": "Project Coordinator",
+          "img": "/media/Team/Rusen.gif"
+        }
+      ],
+      "Capture & Field": [
+        {
+          "name": "Chelle",
+          "role": "Photographer",
+          "img": "/media/_opt/Team/Chelle.webp"
+        },
+        {
+          "name": "Tomasz",
+          "role": "Photographer",
+          "img": "/media/_opt/Team/Tomasz.webp"
+        }
+      ],
+      "Post-Production & Tech": [
+        {
+          "name": "Mariana",
+          "role": "Retoucher",
+          "img": "/media/_opt/Team/Mariana.webp"
+        },
+        {
+          "name": "Tiago",
+          "role": "Retoucher",
+          "img": "/media/_opt/Team/Tiago.webp"
+        },
+        {
+          "name": "Angad",
+          "role": "Head Video Specialist",
+          "img": "/media/_opt/Team/Angad.webp"
+        },
+        {
+          "name": "Miguel",
+          "role": "Retouching Manager",
+          "img": "/media/_opt/Team/Miguel.webp"
+        }
+      ]
+    }
+  },
+  "contact": {
+    "heading": "Get in Touch",
+    "big": "Let's talk",
+    "email": "hello@mediaphotographycompany.com",
+    "phone": "0208 347 7587",
+    "address": "Station Works, 46a Tottenham Ln\nHornsey, London N8 7ED",
+    "hours": "Mon\u2013Fri 9:30\u201318:00"
+  },
+  "footer": {
+    "copyright": "\u00a9 Media Photography Company 2026",
+    "note": "Campaigns Creatively Captured",
+    "socials": [
+      {
+        "label": "LinkedIn",
+        "url": "https://uk.linkedin.com/company/media-photography-company"
+      }
+    ]
+  }
+}

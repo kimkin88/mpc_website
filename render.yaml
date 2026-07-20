@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: mpc-website
+    runtime: node
+    plan: starter
+    buildCommand: ""
+    startCommand: node server.js
+    healthCheckPath: /health
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_KEY
+        generateValue: true
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: REGION
+        sync: false
+      - key: BUCKET_NAME
+        sync: false
+      - key: ACCESS_KEY
+        sync: false
+      - key: SECRET_ACCESS_KEY
+        sync: false
