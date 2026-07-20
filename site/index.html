@@ -72,8 +72,9 @@ html[data-theme="light"] .hero .label{color:#a8a5a0}
 *{margin:0;padding:0;box-sizing:border-box}
 html.native{scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-/* Skip offscreen layout/paint when using native scroll (incompatible with vscroll transforms) */
-html.native #about,html.native #process,html.native #work,html.native #craft,
+/* Skip offscreen layout/paint when using native scroll (incompatible with vscroll transforms).
+   Keep #about/#process out — content-visibility thrash there felt like a scroll freeze. */
+html.native #work,html.native #craft,
 html.native #brands,html.native #team,html.native #quotes,html.native #contact,html.native footer{
   content-visibility:auto;contain-intrinsic-size:auto 720px
 }
@@ -232,12 +233,14 @@ section{padding:var(--sp-section) var(--gutter)}
 /* ---------- process: expanding panels ---------- */
 .process{border-top:1px solid var(--line)}
 #steps{display:flex;gap:clamp(.5rem,1vw,1rem);height:min(70vh,620px)}
-.panel{position:relative;overflow:hidden;flex:1;cursor:pointer;background:var(--panel);transition:flex 1.1s var(--ease)}
+.panel{position:relative;overflow:hidden;flex:1;cursor:pointer;background:var(--panel);transition:flex 1.1s var(--ease);contain:layout paint style}
 .panel::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(242,239,233,.08);z-index:4;pointer-events:none}
 .panel.active{flex:3.5;cursor:default}
-.panel img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) brightness(.38) contrast(1.05);transform:scale(1.15) skewY(var(--skew));transition:filter 1.1s var(--ease)}
-.panel.active img{filter:grayscale(.15) brightness(.52) contrast(1.05);transform:scale(1.02) skewY(var(--skew));transition:filter 1.1s var(--ease),transform 1.1s var(--ease)}
-.panel .shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,.92) 0%,rgba(10,10,10,.15) 60%);z-index:1}
+/* No CSS filter on panel photos — filters + scroll = main-thread freezes */
+.panel img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.12);opacity:.55;transition:opacity .7s var(--ease),transform 1.1s var(--ease)}
+.panel.active img{opacity:.85;transform:scale(1.02)}
+.panel .shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,.94) 0%,rgba(10,10,10,.45) 55%,rgba(10,10,10,.5) 100%);z-index:1;pointer-events:none;transition:background .7s var(--ease)}
+.panel.active .shade{background:linear-gradient(to top,rgba(10,10,10,.9) 0%,rgba(10,10,10,.18) 60%,rgba(10,10,10,.28) 100%)}
 .panel .pnum{position:absolute;top:1.4rem;left:1.4rem;z-index:3;font-family:var(--font-display);font-size:clamp(1.6rem,2.6vw,2.6rem);color:transparent;-webkit-text-stroke:1px var(--grey);transition:.5s;font-variant-numeric:tabular-nums}
 .panel.active .pnum{color:var(--accent);-webkit-text-stroke:1px var(--accent)}
 .panel .ptitle-v{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);writing-mode:vertical-rl;font-family:var(--font-display);font-size:clamp(1.1rem,1.6vw,1.6rem);letter-spacing:.14em;text-transform:uppercase;color:var(--paper);z-index:3;white-space:nowrap;opacity:.85;transition:opacity .5s}
@@ -622,6 +625,8 @@ footer .socials{display:flex;gap:1.8rem}
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
 body.scrolling .marquee .track, body.scrolling .map-wrap .loc { animation-play-state: paused; }
+body.scrolling .panel{transition:none}
+body.scrolling .panel img{transition:none}
 
 .magnetic{display:inline-block;will-change:transform}
 </style>
@@ -941,23 +946,35 @@ const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isTouch = matchMedia('(hover: none)').matches;
 
-/* loader — start immediately so a later init error can't freeze the page */
+/* loader — count 1→100 smoothly so a later init error can't freeze the page */
 let loaderPct = 0, loaderFinished = false, revealSite = null;
-const loaderTimer = setInterval(()=>{
-  loaderPct = Math.min(loaderPct + Math.random() * 13, 100);
-  $('pct').textContent = Math.floor(loaderPct) + '%';
-  if(loaderPct >= 100){
-    clearInterval(loaderTimer);
-    setTimeout(()=>{
-      loaderFinished = true;
-      if(revealSite) revealSite();
-      else{
-        $('loader').classList.add('done');
-        document.body.classList.add('ready');
-      }
-    }, 350);
+const loaderStart = performance.now();
+const LOADER_MS = 2200;
+function loaderTick(now){
+  const t = Math.min(1, (now - loaderStart) / LOADER_MS);
+  /* ease-out so it doesn't feel linear/robotic, still hits every integer */
+  const eased = 1 - Math.pow(1 - t, 2.2);
+  const next = Math.max(1, Math.min(100, Math.round(eased * 100)));
+  if(next !== loaderPct){
+    loaderPct = next;
+    $('pct').textContent = loaderPct + '%';
   }
-}, 170);
+  if(t < 1){
+    requestAnimationFrame(loaderTick);
+    return;
+  }
+  $('pct').textContent = '100%';
+  setTimeout(()=>{
+    loaderFinished = true;
+    if(revealSite) revealSite();
+    else{
+      $('loader').classList.add('done');
+      document.body.classList.add('ready');
+    }
+  }, 280);
+}
+$('pct').textContent = '1%';
+requestAnimationFrame(loaderTick);
 
 /* media optimization — uses /media/_opt/manifest.json when present */
 const mediaManifest = (()=>{
@@ -1087,15 +1104,28 @@ function releaseImgSlot(){
   pumpImgQueue();
 }
 
-/* Hydrate deferred placeholders only when near the viewport */
+/* Hydrate deferred placeholders only when near the viewport — stagger to avoid decode freezes */
+const pendingHydrate = [];
+let hydrateRAF = 0;
+function pumpHydrate(){
+  if(hydrateRAF) return;
+  hydrateRAF = requestAnimationFrame(()=>{
+    hydrateRAF = 0;
+    const img = pendingHydrate.shift();
+    if(img) hydrateImg(img);
+    if(pendingHydrate.length) pumpHydrate();
+  });
+}
 const deferIO = new IntersectionObserver((entries)=>{
   for(const ent of entries){
     if(!ent.isIntersecting) continue;
     const img = ent.target;
     deferIO.unobserve(img);
-    hydrateImg(img);
+    if(img.dataset.loaded === '1') continue;
+    pendingHydrate.push(img);
   }
-}, { rootMargin: '320px 80px', threshold: 0.01 });
+  if(pendingHydrate.length) pumpHydrate();
+}, { rootMargin: '80px 40px', threshold: 0.01 });
 
 function hydrateImg(img){
   if(!img || img.dataset.loaded === '1') return;
@@ -1153,10 +1183,11 @@ $('aboutcols').innerHTML = C.about.paragraphs.map(p=>`<p>${esc(p)}</p>`).join(''
 
 const stepsEl = $('steps');
 const nSteps = C.process.steps.length;
+const processSec = document.getElementById('process');
 stepsEl.innerHTML = C.process.steps.map((s,i)=>{
   const img = s.img || (C.work.items[(i*3) % C.work.items.length] || {}).img || '';
   return `<div class="panel${i===0?' active':''}" data-i="${i}">
-    ${img ? imgTag(img, { defer: i !== 0, sizes: '(max-width:760px) 100vw, 25vw', onerror: 'this.remove()' }) : ''}
+    ${img ? imgTag(img, { defer: true, sizes: '(max-width:760px) 100vw, 28vw', widthHint: 480, onerror: 'this.remove()' }) : ''}
     <div class="shade"></div>
     <span class="pnum">${String(i+1).padStart(2,'0')}</span>
     <span class="ptitle-v">${esc(s.title)}</span>
@@ -1169,27 +1200,83 @@ stepsEl.innerHTML = C.process.steps.map((s,i)=>{
   </div>`;
 }).join('');
 let pActive = 0;
+let pTimer = null;
+function whenScrollIdle(fn){
+  const run = ()=>{
+    if(document.body.classList.contains('scrolling')){
+      setTimeout(run, 140);
+      return;
+    }
+    fn();
+  };
+  run();
+}
+function hydratePanel(i){
+  const p = stepsEl.querySelector(`.panel[data-i="${i}"]`);
+  if(!p) return;
+  const img = p.querySelector('img[data-origin]');
+  if(!img || img.dataset.loaded === '1') return;
+  hydrateImg(img);
+}
+function hydrateAllPanelsIdle(){
+  /* active first, then the rest one-per-idle so scroll never fights decode */
+  hydratePanel(pActive);
+  const order = [];
+  for(let i = 1; i < nSteps; i++) order.push((pActive + i) % nSteps);
+  let k = 0;
+  const next = ()=>{
+    if(k >= order.length) return;
+    const idx = order[k++];
+    whenScrollIdle(()=>{
+      hydratePanel(idx);
+      if('requestIdleCallback' in window) requestIdleCallback(next, { timeout: 900 });
+      else setTimeout(next, 180);
+    });
+  };
+  if('requestIdleCallback' in window) requestIdleCallback(next, { timeout: 600 });
+  else setTimeout(next, 200);
+}
 function setPanel(i){
   pActive = i;
-  stepsEl.querySelectorAll('.panel').forEach((p,x)=>{
-    p.classList.toggle('active', x===i);
-    if(x===i){
-      const img = p.querySelector('img[data-defer="1"]:not([data-loaded])');
-      if(img){ deferIO.unobserve(img); hydrateImg(img); }
-    }
-  });
+  stepsEl.querySelectorAll('.panel').forEach((p,x)=>p.classList.toggle('active', x===i));
+  hydratePanel(i);
 }
-let pTimer = setInterval(()=>setPanel((pActive+1)%nSteps), 5500);
+function startProcessTimer(){
+  if(pTimer || reduced) return;
+  pTimer = setInterval(()=>{
+    if(document.body.classList.contains('scrolling')) return;
+    setPanel((pActive+1)%nSteps);
+  }, 5500);
+}
 stepsEl.querySelectorAll('.panel').forEach(p=>{
   const go = ()=>{
     if(+p.dataset.i === pActive) return;
     clearInterval(pTimer);
-    pTimer = setInterval(()=>setPanel((pActive+1)%nSteps), 6500);
+    pTimer = null;
     setPanel(+p.dataset.i);
+    pTimer = setInterval(()=>{
+      if(document.body.classList.contains('scrolling')) return;
+      setPanel((pActive+1)%nSteps);
+    }, 6500);
   };
   p.addEventListener('mouseenter', go);
   p.addEventListener('click', go);
 });
+/* Arm loads when section is near, but wait for scroll idle before decoding */
+if(processSec){
+  const procIO = new IntersectionObserver(entries=>{
+    if(!entries[0].isIntersecting) return;
+    procIO.disconnect();
+    whenScrollIdle(()=>{
+      hydrateAllPanelsIdle();
+      startProcessTimer();
+    });
+  }, { rootMargin: '40px' });
+  procIO.observe(processSec);
+}else{
+  hydrateAllPanelsIdle();
+  startProcessTimer();
+}
 
 /* work - marquee rows */
 $('workhead').textContent = C.work.heading;
@@ -1216,7 +1303,7 @@ function buildMarquee(){
       card.dataset.i = globalIdx;
       card.innerHTML = `
         <div class="mframe">
-          ${imgTag(w.img, { defer: true, alt: w.title, sizes: '(max-width:600px) 44vw, 22vw', widthHint: 960, onerror: "this.closest('.mcard').style.display='none'" })}
+          ${imgTag(w.img, { defer: true, alt: w.title, sizes: '(max-width:600px) 44vw, 22vw', widthHint: 480, onerror: "this.closest('.mcard').style.display='none'" })}
         </div>
         <div class="mcap">${esc(w.title)}</div>`;
       // Only open lightbox on the first copy to avoid double-registrations
@@ -1229,11 +1316,31 @@ function buildMarquee(){
   t1.innerHTML = ''; t2.innerHTML = '';
   makeCards(row1).forEach(c=>t1.appendChild(c));
   makeCards(row2).forEach(c=>t2.appendChild(c));
-  watchDeferred(t1);
-  watchDeferred(t2);
+  if(marqueeArmed){
+    watchDeferred(t1);
+    watchDeferred(t2);
+  } else {
+    armMarqueeLoads();
+  }
+}
+let marqueeArmed = false;
+function armMarqueeLoads(){
+  const section = $('marqsection');
+  const arm = ()=>{
+    if(marqueeArmed) return;
+    marqueeArmed = true;
+    watchDeferred($('marqtrack1'));
+    watchDeferred($('marqtrack2'));
+  };
+  if(!section){ arm(); return; }
+  const io = new IntersectionObserver(entries=>{
+    if(!entries[0].isIntersecting) return;
+    io.disconnect();
+    arm();
+  }, { rootMargin: '40px' });
+  io.observe(section);
 }
 buildMarquee();
-watchDeferred(stepsEl);
 
 // Trigger animation when section scrolls into view
 (function(){
@@ -1670,11 +1777,31 @@ function cBuild(){
 function cTileTransform(d, bob){
   return `translate(-50%,-50%) translate3d(${d.x.toFixed(1)}px,${(d.y + bob).toFixed(1)}px,${d.z.toFixed(1)}px) rotateZ(${d.rot}deg)`;
 }
+function galleryBaseW(){
+  return Math.min(440, innerWidth * 0.44);
+}
+function galleryFocusScale(){
+  return Math.min(2.5, (innerWidth * 0.75) / galleryBaseW());
+}
+function loadTileImg(d, w){
+  const img = d.el && d.el.querySelector('img');
+  if(!img || !d.imgUrl) return;
+  const want = w || 960;
+  const prev = +(img.dataset.w || 0);
+  if(img.dataset.loaded === '1' && prev >= want) return;
+  img.dataset.loaded = '1';
+  img.dataset.w = String(want);
+  setImgSrc(img, d.imgUrl, want);
+}
 function cRelease(){
   if(!cFocus) return;
   const d = cFocus;
   d.el.classList.remove('focus');
   d.el.classList.add('unfocusing');
+  if(d.focusW != null){
+    d.el.style.width = d.focusW;
+    d.focusW = null;
+  }
   d.el.style.transform = d.home;
   setTimeout(()=>d.el.classList.remove('unfocusing'), 900);
   cFocus = null;
@@ -1684,10 +1811,14 @@ function cRelease(){
 function cClick(d){
   if(cFocus === d) return cRelease();
   cRelease();
+  loadTileImg(d, 1440);
   d.home = d.el.style.transform;
+  d.focusW = d.el.style.width;
+  d.el.style.width = galleryBaseW() + 'px';
   d.el.classList.add('focus');
-  /* bring in front of the camera, dead centre, squared up */
-  d.el.style.transform = `translate(-50%,-50%) translate3d(${(-cmx).toFixed(1)}px,${(-cmy).toFixed(1)}px,${(-camZ - 380).toFixed(1)}px) rotateZ(0deg) scale(1.75)`;
+  const sc = galleryFocusScale();
+  /* same featured size as the strip */
+  d.el.style.transform = `translate(-50%,-50%) translate3d(${(-cmx).toFixed(1)}px,${(-cmy).toFixed(1)}px,${(-camZ - 380).toFixed(1)}px) rotateZ(0deg) scale(${sc.toFixed(2)})`;
   d.el.style.opacity = 1;
   cFocus = d;
   cons.classList.add('focused');
@@ -1712,8 +1843,7 @@ function cLoop(t){
     while(ze < -CZR + 150){ d.z += CZR; ze = d.z + camZ; }
     const img = d.el.querySelector('img');
     if(img && !img.dataset.loaded && ze > -450 && ze < 120){
-      setImgSrc(img, d.imgUrl, ze > -350 ? 960 : 480);
-      img.dataset.loaded = '1';
+      loadTileImg(d, ze > -350 ? 960 : 480);
     }
     const bob = Math.sin(time * .5 + d.ph) * d.amp;
     d.el.style.transform = cTileTransform(d, bob);
@@ -1842,8 +1972,9 @@ function stRelease(){
 function stClick(d){
   if(stFocus === d) return stRelease();
   stRelease();
+  loadTileImg(d, 1440);
   d.el.classList.add('focus');
-  const sc = Math.min(2.5, (innerWidth * 0.75) / Math.min(440, innerWidth * 0.44));
+  const sc = galleryFocusScale();
   d.el.style.transform = `translate(-50%,-50%) translate3d(${(-stMx).toFixed(1)}px,0px,${(-stCam - 350).toFixed(1)}px) rotateY(0deg) scale(${sc.toFixed(2)})`;
   d.el.style.opacity = 1;
   stFocus = d;
@@ -1872,8 +2003,7 @@ function stLoop(t){
     while(ze < -ZR + 260){ d.z += ZR; ze = d.z + stCam; }
     const img = d.el.querySelector('img');
     if(img && !img.dataset.loaded && ze > -400 && ze < 200){
-      setImgSrc(img, d.imgUrl, 960);
-      img.dataset.loaded = '1';
+      loadTileImg(d, 960);
     }
     d.el.style.transform = stTransform(d);
     const farFade = Math.min(1, (ze + ZR) / (ZR * .25));
